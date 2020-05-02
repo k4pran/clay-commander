@@ -4,8 +4,7 @@ from flask import Flask, jsonify, request
 import mission_control
 import communication as comms
 from routes import command_component
-import utils.importer as importer
-import converter.data_table as date_table_converter
+import fetch_service
 
 app = Flask(__name__)
 app.register_blueprint(command_component)
@@ -19,12 +18,13 @@ def command():
     mission_control.execute_command(request.args.get("message"))
     return jsonify("message sent")
 
+@app.route('/fetch')
+def fetch_general():
+    return fetch_service.fetch(request.args.get("request"))
 
-@app.route('/display/table')
-def get_file():
-    filename = request.args.get("name")
-    df = importer.import_csv_as_df("./storage/csvs/" + filename)
-    return date_table_converter.from_data_frame(filename, df)
+@app.route('/fetch/table')
+def fetch_table():
+    return fetch_service.fetch_table(request.args.get("request"))
 
 
 if __name__ == "__main__":

@@ -1,10 +1,10 @@
 import React from 'react';
 import {StyledInput, StyledTerminalLine} from "./style";
 
-const TerminalLine = ({className, initReadOnly, focus, handleLineChange, value}) => {
+const TerminalLine = ({className, initReadOnly, focus, handleLineChange, value, isError}) => {
 
     return (
-        <StyledTerminalLine className={className}> >
+        <StyledTerminalLine className={className}> {isError ? '' : '>'}
             <StyledInput className={className}
                          type="text"
                          value={value}
@@ -12,6 +12,7 @@ const TerminalLine = ({className, initReadOnly, focus, handleLineChange, value})
                          autoComplete="off"
                          readOnly={initReadOnly}
                          onChange={e => handleLineChange(e)}
+                         isError={isError}
             />
         </StyledTerminalLine>
     )

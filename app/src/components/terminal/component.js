@@ -61,16 +61,16 @@ const Terminal = () => {
         setCurrentLine(e.target.value);
     };
 
-    function handleDisplayTable() {
-        let queryParts = currentLine.split("display table");
-        axios.get('/display/table', {
+    function handleDisplay() {
+        let queryParts = currentLine.split("display");
+        if (queryParts.length > 1) {
+            axios.get('/fetch', {
             params: {
-                name: queryParts[1].trim()
+                request: queryParts[1].trim()
             }
         })
             .then(res => {
                 let data = res.data;
-                console.log(data);
                 routeHistory.push({
                     pathname: '/table',
                     state: {
@@ -81,8 +81,40 @@ const Terminal = () => {
                 })
             })
             .catch(err => {
-                console.log(err)
+                setLines(lines => [...lines, {
+                    key: lines.length, text: err, error: true
+                }]);
+                setCurrentLine("");
             });
+        }
+    }
+
+    function handleDisplayTable() {
+        let queryParts = currentLine.split("display table");
+        if (queryParts.length > 1) {
+            axios.get('/fetch/table', {
+            params: {
+                request: queryParts[1].trim()
+            }
+        })
+            .then(res => {
+                let data = res.data;
+                routeHistory.push({
+                    pathname: '/table',
+                    state: {
+                        title: data.title,
+                        columns: data.columns,
+                        data: data.data
+                    }
+                })
+            })
+            .catch(err => {
+                setLines(lines => [...lines, {
+                    key: lines.length, text: err, error: true
+                }]);
+                setCurrentLine("");
+            });
+        }
     }
 
     function processCommand() {
@@ -90,11 +122,15 @@ const Terminal = () => {
             handleDisplayTable();
             return;
         }
+        if (currentLine.includes("display")) {
+            handleDisplay();
+            return;
+        }
         if (currentLine === "clear") {
             setLines(() => [])
         } else {
             setLines(lines => [...lines, {
-                key: lines.length, text: currentLine
+                key: lines.length, text: currentLine, error: false
             }]);
         }
         if (currentLine.length > 0) {
@@ -115,6 +151,7 @@ const Terminal = () => {
                     focus={false}
                     handleLineChange={handleLineChange}
                     value={line.text}
+                    isError={line.error}
                 />
             ))}
             <TerminalLine
@@ -123,6 +160,7 @@ const Terminal = () => {
                 focus={true}
                 handleLineChange={handleLineChange}
                 value={currentLine}
+                isError={false}
             />
         </StyledTerminal>
     )
