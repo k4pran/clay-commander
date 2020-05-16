@@ -1,17 +1,19 @@
 import utils
-import converter.data_table as date_table_converter
-import os
+import db
+from exceptions.import_exceptions import *
 
 
-def fetch(request: str):
-    request_type = utils.interpret_request_type(request)
+def import_from(location: str):
+    request_type = utils.interpret_request_type(location)
     if request_type == "URL":
-        title = os.path.basename(request).split(".")[0]
-        return fetch_table(request, title)
+        db.import_csv(location)
+    else:
+        raise UnknownResourceException("Fetch request '{}' is not a recognised format".format(location))
 
 
-def fetch_table(location: str, title=None):
-    df = utils.importer.import_csv_as_df(location)
-    if not title:
-        title = location
-    return date_table_converter.from_data_frame(title, df)
+def fetch_table(name: str):
+    return db.fetch_table(name)
+
+
+def fetch_table_list():
+    return db.querier.fetch_table_names()

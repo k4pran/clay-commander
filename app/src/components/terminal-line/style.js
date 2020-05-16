@@ -12,10 +12,10 @@ export const StyledTerminalLine = styled.div`
     ${TerminalShared}
 `;
 
+
 export const StyledInput = styled.input`
-    ${props => console.log(props.isError)}
     ${TerminalShared}
-    color: ${props => props.isError ? "red" : "white"};
+    color: ${props => props.theme[props.lineStyle].color};
     width: 95%;
     word-break: break-word;
     border: 0;

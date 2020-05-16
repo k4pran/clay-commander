@@ -1,0 +1,2 @@
+class UnknownResourceException(Exception):
+    pass

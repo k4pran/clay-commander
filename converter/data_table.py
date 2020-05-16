@@ -41,7 +41,3 @@ def determine_data_type(date_type: np.dtype):
         return "numeric"
     else:
         return "string"
-
-
-if __name__ == "__main__":
-    df = pd.read_csv("../storage/csvs/health_effects.csv", na_values='-')

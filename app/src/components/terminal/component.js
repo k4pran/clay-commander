@@ -61,8 +61,14 @@ const Terminal = () => {
         setCurrentLine(e.target.value);
     };
 
-    function handleDisplay() {
-        let queryParts = currentLine.split("display");
+    function handleHome() {
+        routeHistory.push({
+            pathname: '/'
+        })
+    }
+
+    function handleFetch() {
+        let queryParts = currentLine.split("fetch");
         if (queryParts.length > 1) {
             axios.get('/fetch', {
             params: {
@@ -71,18 +77,14 @@ const Terminal = () => {
         })
             .then(res => {
                 let data = res.data;
-                routeHistory.push({
-                    pathname: '/table',
-                    state: {
-                        title: data.title,
-                        columns: data.columns,
-                        data: data.data
-                    }
-                })
+                setLines(lines => [...lines, {
+                    key: lines.length, text: data.title, lineStyle: "info"
+                }]);
             })
             .catch(err => {
+                console.log(err.response.data);
                 setLines(lines => [...lines, {
-                    key: lines.length, text: err, error: true
+                    key: lines.length, text: err.response.data, lineStyle: "error"
                 }]);
                 setCurrentLine("");
             });
@@ -92,7 +94,7 @@ const Terminal = () => {
     function handleDisplayTable() {
         let queryParts = currentLine.split("display table");
         if (queryParts.length > 1) {
-            axios.get('/fetch/table', {
+            axios.get('/display/table', {
             params: {
                 request: queryParts[1].trim()
             }
@@ -110,28 +112,64 @@ const Terminal = () => {
             })
             .catch(err => {
                 setLines(lines => [...lines, {
-                    key: lines.length, text: err, error: true
+                    key: lines.length, text: err, lineStyle: "error"
                 }]);
                 setCurrentLine("");
             });
         }
     }
 
+    function handleListTables() {
+        axios.get('/list/tables')
+        .then(res => {
+            let tableNames = res.data;
+            tableNames.forEach(tableName => {
+                setLines(lines => [...lines, {
+                    key: lines.length, text: tableName, lineStyle: "info"
+                }]);
+            });
+        })
+        .catch(err => {
+            setLines(lines => [...lines, {
+                key: lines.length, text: err, lineStyle: "error"
+            }]);
+            setCurrentLine("");
+        });
+    }
+
     function processCommand() {
+        if (currentLine === "home") {
+            handleHome();
+            return;
+        }
         if (currentLine.includes("display table")) {
             handleDisplayTable();
             return;
         }
-        if (currentLine.includes("display")) {
-            handleDisplay();
-            return;
+        if (currentLine.includes("fetch")) {
+            handleFetch();
         }
+        if (currentLine === "list tables") {
+            handleListTables();
+        }
+
+        if (currentLine === "clear history") {
+            setHistory(() => []);
+            setHistoryPtr(() => 0);
+            setLines(lines => [...lines, {
+                key: lines.length, text: "history cleared", lineStyle: "success"
+            }]);
+            setCurrentLine("");
+            return
+        }
+
         if (currentLine === "clear") {
             setLines(() => [])
-        } else {
+        }
+        else {
             setLines(lines => [...lines, {
-                key: lines.length, text: currentLine, error: false
-            }]);
+                key: lines.length, text: currentLine, lineStyle: "normal"
+            }])
         }
         if (currentLine.length > 0) {
             setHistory(oldHistory => [...oldHistory, currentLine]);
@@ -151,7 +189,7 @@ const Terminal = () => {
                     focus={false}
                     handleLineChange={handleLineChange}
                     value={line.text}
-                    isError={line.error}
+                    lineStyle={line.lineStyle}
                 />
             ))}
             <TerminalLine
@@ -160,7 +198,7 @@ const Terminal = () => {
                 focus={true}
                 handleLineChange={handleLineChange}
                 value={currentLine}
-                isError={false}
+                lineStyle={"normal"}
             />
         </StyledTerminal>
     )
