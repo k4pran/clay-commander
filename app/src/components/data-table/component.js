@@ -19,6 +19,8 @@ import SaveAlt from '@material-ui/icons/SaveAlt';
 import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
 import createMuiTheme from "@material-ui/core/styles/createMuiTheme";
+import GlobalStyle from "../../global-style";
+import {StyledTexViewer} from "../tex-viewer/style";
 
 const tableIcons = {
     Add: forwardRef((props, ref) => <AddBox {...props} ref={ref}/>),
@@ -73,6 +75,7 @@ export default function DataTable() {
 
     return (
         <div style={{maxWidth: '100%'}}>
+            <GlobalStyle terminal={true}/>
             <MuiThemeProvider theme={theme}>
                 <MaterialTable
                     icons={tableIcons}

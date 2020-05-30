@@ -3,6 +3,7 @@ import {useHistory} from "react-router-dom";
 import axios from 'axios'
 import TerminalLine from "../terminal-line/component";
 import {StyledTerminal} from "./style";
+import GlobalStyle from "../../global-style";
 
 const Terminal = () => {
 
@@ -78,7 +79,7 @@ const Terminal = () => {
             .then(res => {
                 let data = res.data;
                 setLines(lines => [...lines, {
-                    key: lines.length, text: data.title, lineStyle: "info"
+                    key: lines.length, text: "imported " + data.name, lineStyle: "info"
                 }]);
             })
             .catch(err => {
@@ -119,6 +120,51 @@ const Terminal = () => {
         }
     }
 
+    function handleDisplayImages() {
+        let queryParts = currentLine.split("display images");
+        if (queryParts.length > 1) {
+            axios.get('/display/images', {
+            params: {
+                request: queryParts[1].trim()
+            }
+        })
+            .then(res => {
+                let data = res.data;
+                // console.log(data);
+                routeHistory.push({
+                    pathname: '/gallery',
+                    state: {
+                        imageData:data
+                    }
+                })
+            })
+            .catch(err => {
+                setLines(lines => [...lines, {
+                    key: lines.length, text: err, lineStyle: "error"
+                }]);
+                setCurrentLine("");
+            });
+        }
+    }
+
+    function handleListImages() {
+        axios.get('/list/images')
+        .then(res => {
+            let imageNames = res.data;
+            imageNames.forEach(imageName => {
+                setLines(lines => [...lines, {
+                    key: lines.length, text: imageName, lineStyle: "info"
+                }]);
+            });
+        })
+        .catch(err => {
+            setLines(lines => [...lines, {
+                key: lines.length, text: err, lineStyle: "error"
+            }]);
+            setCurrentLine("");
+        });
+    }
+
     function handleListTables() {
         axios.get('/list/tables')
         .then(res => {
@@ -146,11 +192,18 @@ const Terminal = () => {
             handleDisplayTable();
             return;
         }
+        if (currentLine.includes("display images")) {
+            handleDisplayImages();
+            return;
+        }
         if (currentLine.includes("fetch")) {
             handleFetch();
         }
         if (currentLine === "list tables") {
             handleListTables();
+        }
+        if (currentLine === "list images") {
+            handleListImages();
         }
 
         if (currentLine === "clear history") {
@@ -182,6 +235,7 @@ const Terminal = () => {
 
     return (
         <StyledTerminal>
+            <GlobalStyle terminal={true}/>
             {lines.map(line => (
                 <TerminalLine
                     key={line.key}

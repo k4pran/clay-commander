@@ -33,9 +33,24 @@ def fetch_table():
     return fetch_service.fetch_table(request.args.get("request"))
 
 
+@app.route('/display/images')
+def fetch_images():
+    images = fetch_service.fetch_images(request.args.get("request"))
+    return jsonify([{"original": image['image'],
+                     "thumbnail": image['image'],
+                     "originalTitle": image['title'],
+                     "thumbnailTitle": image['title'],
+                     "thumbnailLabel": image['title']} for image in images])
+
+
 @app.route('/list/tables')
 def list_tables():
     return jsonify(fetch_service.fetch_table_list())
+
+
+@app.route('/list/images')
+def list_images():
+    return jsonify(fetch_service.fetch_image_list())
 
 
 if __name__ == "__main__":

@@ -1,21 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import * as serviceWorker from './serviceWorker';
-import {createGlobalStyle} from "styled-components";
 import App from "./app";
-
-const GlobalStyle = createGlobalStyle`
-    html, body {
-        height: 100%;
-        background-color: black;
-        padding: 0;
-        margin: 0;
-    }
-`;
 
 ReactDOM.render(
     <div>
-        <GlobalStyle/>
         <App />
     </div>,
   document.getElementById('root')
