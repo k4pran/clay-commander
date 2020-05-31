@@ -4,6 +4,19 @@ import axios from 'axios'
 import TerminalLine from "../terminal-line/component";
 import {StyledTerminal} from "./style";
 import GlobalStyle from "../../global-style";
+import cmdParser from './cmdParser'
+
+
+const commands = [
+    "go home",
+    "display table",
+    "display images",
+    "fetch",
+    "list tables",
+    "list images",
+    "clear",
+    "clear history",
+];
 
 const Terminal = () => {
 
@@ -184,29 +197,31 @@ const Terminal = () => {
     }
 
     function processCommand() {
-        if (currentLine === "home") {
+        let cmd = cmdParser.determineCommand(commands, currentLine);
+
+        if (cmd === "home") {
             handleHome();
             return;
         }
-        if (currentLine.includes("display table")) {
+        else if (cmd === "display table") {
             handleDisplayTable();
             return;
         }
-        if (currentLine.includes("display images")) {
+        else if (cmd === "display images") {
             handleDisplayImages();
             return;
         }
-        if (currentLine.includes("fetch")) {
+        else if (cmd === "fetch") {
             handleFetch();
         }
-        if (currentLine === "list tables") {
+        else if (cmd === "list tables") {
             handleListTables();
         }
-        if (currentLine === "list images") {
+        else if (cmd === "list images") {
             handleListImages();
         }
 
-        if (currentLine === "clear history") {
+        else if (cmd === "clear history") {
             setHistory(() => []);
             setHistoryPtr(() => 0);
             setLines(lines => [...lines, {
@@ -216,13 +231,18 @@ const Terminal = () => {
             return
         }
 
-        if (currentLine === "clear") {
+        if (cmd === "clear") {
             setLines(() => [])
         }
         else {
             setLines(lines => [...lines, {
                 key: lines.length, text: currentLine, lineStyle: "normal"
-            }])
+            }]);
+            if (Array.isArray(cmd) && cmd.length > 0) {
+                setLines(lines => [...lines, {
+                    key: lines.length, text: "Command not found. Similar commands: ", lineStyle: "info"
+                }]);
+            }
         }
         if (currentLine.length > 0) {
             setHistory(oldHistory => [...oldHistory, currentLine]);
