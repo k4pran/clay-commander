@@ -1,10 +1,19 @@
 from fuzzywuzzy import process
 
-from exceptions.table_not_found_exception import TableNotFoundException
 from .client import *
 
 
 match_threshold = 0.6
+
+
+def fetch_any(name: str):
+    result = fetch_table(name)
+    if result:
+        return result
+
+    result = fetch_images(name)
+    if result:
+        return result
 
 
 def fetch_table(name: str):
@@ -12,7 +21,7 @@ def fetch_table(name: str):
     if score > match_threshold:
         return tables_formatted.find_one({'name': name})['data']
     else:
-        raise TableNotFoundException
+        return None
 
 
 def fetch_images(name: str):
@@ -20,7 +29,7 @@ def fetch_images(name: str):
     if score > match_threshold:
         return [table_images.find_one({'name': name})['data']]
     else:
-        raise TableNotFoundException
+        return None
 
 
 def fetch_table_names():

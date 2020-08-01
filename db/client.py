@@ -8,3 +8,6 @@ tables_formatted = tables_db.get_collection("tables_formatted")
 
 images_db = client['images']
 table_images = tables_db.get_collection("all_images")
+
+text_db = client['text']
+table_text = tables_db.get_collection("all_text")

@@ -1,20 +1,14 @@
-import os
-import pandas as pd
 import converter
 import pickle
 
 from .client import *
 
 
-def import_csv(location, name=None, fillna='-') -> dict:
-    df = pd.read_csv(location, encoding="latin1", engine='python', index_col=False)
-    df = df.fillna(fillna)
-    if not name:
-        name = extract_title_from_path(location)
+def import_csv(df, name) -> dict:
     formatted_tbl = converter.from_data_frame(name, df)
 
     tables_csv.insert_one({
-        "location": location,
+        "name": name,
         "data": pickle.dumps(df)
     })
 
@@ -27,10 +21,7 @@ def import_csv(location, name=None, fillna='-') -> dict:
     return [i for i in tables_formatted.find({"name": name}, {"_id": 0})][0]
 
 
-def import_image(location: str, name=None):
-    if not name:
-        name = extract_title_from_path(location)
-
+def import_image(location: str, name):
     image_doc = {
         "name": name,
         "location": location,
@@ -41,5 +32,12 @@ def import_image(location: str, name=None):
     return [i for i in table_images.find({"name": name}, {"_id": 0})][0]
 
 
-def extract_title_from_path(path: str):
-    return os.path.basename(path).split(".")[0]
+def import_text(content: str, name):
+    text_doc = {
+        "name": name,
+        "content": content,
+        "data": {"text": content, "title": name}
+    }
+
+    table_text.insert_one(text_doc)
+    return [i for i in table_text.find({"name": name}, {"_id": 0})][0]
