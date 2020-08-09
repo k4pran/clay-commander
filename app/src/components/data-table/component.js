@@ -1,7 +1,7 @@
-import React, {forwardRef, useEffect, useState} from 'react'
+import React, {forwardRef, useContext, useEffect, useReducer, useState} from 'react'
 import {useLocation} from "react-router-dom";
 import MaterialTable from 'material-table'
-import { ThemeProvider as MuiThemeProvider } from '@material-ui/core/styles';
+import {ThemeProvider as MuiThemeProvider} from '@material-ui/core/styles';
 
 import AddBox from '@material-ui/icons/AddBox';
 import ArrowDownward from '@material-ui/icons/ArrowDownward';
@@ -20,6 +20,8 @@ import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
 import createMuiTheme from "@material-ui/core/styles/createMuiTheme";
 import GlobalStyle from "../../global-style";
+import Reducer from "../../reducer";
+import {Context} from "../../store";
 
 const tableIcons = {
     Add: forwardRef((props, ref) => <AddBox {...props} ref={ref}/>),
@@ -44,12 +46,14 @@ const tableIcons = {
 export default function DataTable() {
 
     const location = useLocation();
+    const [state, dispatch] = useContext(Context);
 
     const [title, setTitle] = useState(location.state.title);
     const [columns, setColumns] = useState(location.state.columns);
     const [data, setData] = useState(location.state.data);
 
     useEffect(() => {
+        dispatch({type: 'SET_CURRENT_PAGE', currentPage: 'table'});
     }, []);
 
     const theme = createMuiTheme({
