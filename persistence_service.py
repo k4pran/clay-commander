@@ -1,7 +1,7 @@
 import tarfile
 import urllib
 import db
-import sherlock
+import deductive_service
 
 table_types = {"CSV"}
 image_types = {"PNG", "JPG", "JPEG", "SVG"}
@@ -11,7 +11,7 @@ zip_types = {"GZIP", "TGZ"}
 
 def persist(content, content_type, name):
     if not content_type:
-        content_type = sherlock.interpret_url_content_type(content)
+        content_type = deductive_service.interpret_url_content_type(content)
     if content_type in table_types:
         return import_table(content, name)
 

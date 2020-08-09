@@ -4,6 +4,7 @@ import DataTable from "./components/data-table/component";
 import Terminal from "./components/terminal/component";
 import TexHub from "./components/tex-hub/component";
 import ImageViewer from "./components/image-gallery/component";
+import JsonViewer from "./components/json-viewer/component";
 
 const App = () => {
     return (
@@ -18,6 +19,10 @@ const App = () => {
             </Route>
             <Route exact path="/gallery">
                 <ImageViewer/>
+            </Route>
+            <Route exact path="/json">
+                <JsonViewer/>
+                <Terminal/>
             </Route>
         </BrowserRouter>
     )

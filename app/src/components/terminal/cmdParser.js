@@ -9,7 +9,7 @@ const fuzzyOptions = {
   minMatchCharLength: 1,
   location: 0,
   threshold: 0.4,
-  distance: 100,
+  distance: 1000,
   useExtendedSearch: false
 };
 
@@ -27,21 +27,25 @@ const fuzzyRelaxedOptions = {
 };
 
 const determineCommand = (possibleCommands, requestedCommand) => {
-    const fuse = new Fuse(possibleCommands, fuzzyOptions);
-    let results = fuse.search(requestedCommand);
-    if (results.length > 0) {
-        return results[0].item;
-    }
-    else {
-        const alternativeFuse = new Fuse(possibleCommands, fuzzyRelaxedOptions);
-        let alternativeResults = fuse.search(possibleCommands);
-        let altCommands = [];
-        console.log(alternativeResults);
-        alternativeResults.forEach(alternative => {
-            altCommands.push(alternative['item']);
-        });
-        return altCommands;
-    }
+    return requestedCommand
 };
+
+// const determineCommand = (possibleCommands, requestedCommand) => {
+//     const fuse = new Fuse(possibleCommands, fuzzyOptions);
+//     let results = fuse.search(requestedCommand);
+//     if (results.length > 0) {
+//         return results[0].item;
+//     }
+//     else {
+//         const alternativeFuse = new Fuse(possibleCommands, fuzzyRelaxedOptions);
+//         let alternativeResults = alternativeFuse.search(possibleCommands);
+//         let altCommands = [];
+//         console.log(alternativeResults);
+//         alternativeResults.forEach(alternative => {
+//             altCommands.push(alternative['item']);
+//         });
+//         return altCommands;
+//     }
+// };
 
 export default {determineCommand};

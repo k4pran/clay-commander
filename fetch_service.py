@@ -1,6 +1,7 @@
 import db
-import sherlock
-
+import deductive_service
+import converter_service
+import state
 
 url_as_content_types = {
     'PNG',
@@ -19,22 +20,25 @@ def internal_fetch_any(location: str):
 
 
 def external_fetch_any(location: str):
-    if sherlock.is_url(location):
+    if deductive_service.is_url(location):
         fetch_from_url(location)
-    elif sherlock.is_file(location):
+    elif deductive_service.is_file(location):
         fetch_from_file(location)
 
 
-def fetch_from_url(location: str):
-    content_type, response = sherlock.interpret_url_content_type(location)
+def fetch_from_url(location: str, name=""):
+    content_type, response = deductive_service.interpret_url_content_type(location)
     if content_type in url_as_content_types:
         return location
     elif content_type == 'JSON':
-        return response.content.decode("utf-8")
+        return state.ration_data(response.content.decode("utf-8")), 'application/json'
+    elif content_type == 'CSV':
+        df = converter_service.csv_from_bytes(response.content)
+        return converter_service.pandas_to_mat_table(name, df), 'text/csv'
     elif content_type == 'SVG':
-        return response.content.decode("utf-8")
-    elif content_type == 'application/octet-stream':
-        pass # todo
+        return response.content.decode("utf-8"), 'image/svg+xml'
+    elif content_type == 'HTML':
+        return response.content, 'text/html'
 
 
 def fetch_from_file(location: str):

@@ -1,4 +1,3 @@
-import converter
 import pickle
 
 from .client import *

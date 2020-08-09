@@ -24,7 +24,7 @@ def interpret_content_type(content):
 
 
 def interpret_url_content_type(url: str) -> (str, requests.Response):
-    if not url.startswith("http://"):
+    if not url.startswith("http://") and not url.startswith("https://"):
         url = "http://" + url
     response = requests.get(url)
     content_type = response.headers['content-type']
@@ -47,6 +47,12 @@ def interpret_url_content_type(url: str) -> (str, requests.Response):
     elif "application/json" in content_type:
         content_type = "JSON"
 
+    elif "text/csv" in content_type:
+        content_type = "CSV"
+
+    elif "text/html" in content_type:
+        content_type = "HTML"
+
     elif "text" in content_type or content_type == "application/octet-stream":
         content_type = interpret_content_type_by_bytes(response.content)
     return content_type, response
@@ -56,8 +62,7 @@ def interpret_content_type_by_bytes(content: bytes):
     if is_gzip(content):
         return "GZIP"
 
-    is_csv = is_content_csv(content)
-    if is_csv:
+    if is_content_csv(content):
         return "CSV"
 
 

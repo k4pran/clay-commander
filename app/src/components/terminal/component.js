@@ -1,10 +1,11 @@
-import React, {useEffect, useState} from "react";
+import React, {useContext, useEffect, useState} from "react";
 import {useHistory} from "react-router-dom";
 import axios from 'axios'
 import TerminalLine from "../terminal-line/component";
 import {StyledTerminal} from "./style";
 import GlobalStyle from "../../global-style";
 import cmdParser from './cmdParser'
+import {Context} from "../../store";
 
 
 const commands = [
@@ -23,6 +24,8 @@ const Terminal = () => {
     const ENTER_KEY = 13;
     const UP_KEY = 38;
     const DOWN_KEY = 40;
+
+    const [state, dispatch] = useContext(Context);
 
     const [lines, setLines] = useState([]);
     const [history, setHistory] = useState([]);
@@ -56,11 +59,12 @@ const Terminal = () => {
     };
 
     useEffect(() => {
+        dispatch({type: 'SET_CURRENT_PAGE', currentPage: 'terminal'});
         window.addEventListener('keydown', _handleKeyDown);
         return () => {
             window.removeEventListener('keydown', _handleKeyDown);
         };
-    });
+    }, []);
 
     useEffect(() => {
         if (historyPtr > history.length - 1) {
@@ -81,12 +85,10 @@ const Terminal = () => {
         })
     }
 
-    function handleFetch() {
-        let queryParts = currentLine.split("fetch");
-        if (queryParts.length > 1) {
-            axios.get('/fetch', {
+    function handleFetch(args) {
+        axios.get('/fetch', {
             params: {
-                request: queryParts[1].trim()
+                request: args
             }
         })
             .then(res => {
@@ -102,43 +104,64 @@ const Terminal = () => {
                 }]);
                 setCurrentLine("");
             });
-        }
     }
 
-    function handleDisplayTable() {
-        let queryParts = currentLine.split("display table");
-        if (queryParts.length > 1) {
-            axios.get('/display/table', {
+    function executeRequest(args) {
+        axios.get('/request', {
             params: {
-                request: queryParts[1].trim()
+                request: args
             }
         })
             .then(res => {
-                let data = res.data;
-                routeHistory.push({
-                    pathname: '/table',
-                    state: {
-                        title: data.title,
-                        columns: data.columns,
-                        data: data.data
-                    }
-                })
+                console.log(res);
+                handle_request_success(res.data, res.headers['content-type'].split(";")[0]);
             })
             .catch(err => {
-                setLines(lines => [...lines, {
-                    key: lines.length, text: err, lineStyle: "error"
-                }]);
-                setCurrentLine("");
+                handle_request_error(err)
             });
+    }
+
+    function handle_request_success(data, contentType) {
+        setLines(lines => [...lines, {
+            key: lines.length, text: "request executed successfully", lineStyle: "info"
+        }]);
+        if (contentType === "application/json") {
+            routeHistory.push({
+                pathname: '/json',
+                state: {
+                    json: data,
+                }
+            })
+        }
+        else if (contentType === "text/csv") {
+            console.log(data);
+            handleDisplayTable(data)
         }
     }
 
-    function handleDisplayImages() {
-        let queryParts = currentLine.split("display images");
-        if (queryParts.length > 1) {
-            axios.get('/display/images', {
+    function handle_request_error(err) {
+        console.log(err.response.data);
+        setLines(lines => [...lines, {
+            key: lines.length, text: err.response.data, lineStyle: "error"
+        }]);
+        updateHistory();
+    }
+
+    function handleDisplayTable(data) {
+        routeHistory.push({
+            pathname: '/table',
+            state: {
+                title: data.title,
+                columns: data.columns,
+                data: data.data
+            }
+        })
+    }
+
+    function handleDisplayImages(args) {
+        axios.get('/display/images', {
             params: {
-                request: queryParts[1].trim()
+                request: args
             }
         })
             .then(res => {
@@ -147,7 +170,7 @@ const Terminal = () => {
                 routeHistory.push({
                     pathname: '/gallery',
                     state: {
-                        imageData:data
+                        imageData: data
                     }
                 })
             })
@@ -157,69 +180,73 @@ const Terminal = () => {
                 }]);
                 setCurrentLine("");
             });
-        }
     }
 
     function handleListImages() {
         axios.get('/list/images')
-        .then(res => {
-            let imageNames = res.data;
-            imageNames.forEach(imageName => {
+            .then(res => {
+                let imageNames = res.data;
+                imageNames.forEach(imageName => {
+                    setLines(lines => [...lines, {
+                        key: lines.length, text: imageName, lineStyle: "info"
+                    }]);
+                });
+            })
+            .catch(err => {
                 setLines(lines => [...lines, {
-                    key: lines.length, text: imageName, lineStyle: "info"
+                    key: lines.length, text: err, lineStyle: "error"
                 }]);
+                setCurrentLine("");
             });
-        })
-        .catch(err => {
-            setLines(lines => [...lines, {
-                key: lines.length, text: err, lineStyle: "error"
-            }]);
-            setCurrentLine("");
-        });
     }
 
     function handleListTables() {
         axios.get('/list/tables')
-        .then(res => {
-            let tableNames = res.data;
-            tableNames.forEach(tableName => {
+            .then(res => {
+                let tableNames = res.data;
+                tableNames.forEach(tableName => {
+                    setLines(lines => [...lines, {
+                        key: lines.length, text: tableName, lineStyle: "info"
+                    }]);
+                });
+            })
+            .catch(err => {
                 setLines(lines => [...lines, {
-                    key: lines.length, text: tableName, lineStyle: "info"
+                    key: lines.length, text: err, lineStyle: "error"
                 }]);
+                setCurrentLine("");
             });
-        })
-        .catch(err => {
-            setLines(lines => [...lines, {
-                key: lines.length, text: err, lineStyle: "error"
-            }]);
-            setCurrentLine("");
-        });
     }
 
     function processCommand() {
+        let cmdParts = currentLine.split("--");
         let cmd = cmdParser.determineCommand(commands, currentLine);
+        console.log(cmd);
+        let args = cmdParts.slice(1).join();
 
-        if (cmd === "home") {
+        setLines(lines => [...lines, {
+            key: lines.length, text: currentLine, lineStyle: "normal"
+        }]);
+        setCurrentLine("");
+        if (cmd === "go home") {
             handleHome();
             return;
-        }
-        else if (cmd === "display table") {
-            handleDisplayTable();
+        } else if (cmd === "display table") {
+            handleDisplayTable(args);
+            return;
+        } else if (cmd === "display images") {
+            handleDisplayImages(args);
             return;
         }
-        else if (cmd === "display images") {
-            handleDisplayImages();
-            return;
-        }
-        else if (cmd === "fetch") {
-            handleFetch();
-        }
-        else if (cmd === "list tables") {
-            handleListTables();
-        }
-        else if (cmd === "list images") {
-            handleListImages();
-        }
+        // else if (cmd === "fetch") {
+        //     handleFetch(args);
+        // }
+        // else if (cmd === "list tables") {
+        //     handleListTables();
+        // }
+        // else if (cmd === "list images") {
+        //     handleListImages();
+        // }
 
         else if (cmd === "clear history") {
             setHistory(() => []);
@@ -227,30 +254,23 @@ const Terminal = () => {
             setLines(lines => [...lines, {
                 key: lines.length, text: "history cleared", lineStyle: "success"
             }]);
-            setCurrentLine("");
             return
-        }
-
-        if (cmd === "clear") {
+        } else if (cmd === "clear") {
             setLines(() => [])
-        }
-        else {
-            setLines(lines => [...lines, {
-                key: lines.length, text: currentLine, lineStyle: "normal"
-            }]);
-            if (Array.isArray(cmd) && cmd.length > 0) {
-                setLines(lines => [...lines, {
-                    key: lines.length, text: "Command not found. Similar commands: ", lineStyle: "info"
-                }]);
-            }
+        } else {
+            executeRequest(cmd);
+            return;
         }
         if (currentLine.length > 0) {
             setHistory(oldHistory => [...oldHistory, currentLine]);
             setHistoryPtr(historyPtr => historyPtr + 1);
-            setCurrentLine("");
+            updateHistory();
         }
+    }
 
-        setCurrentLine("");
+    function updateHistory() {
+        setHistory(oldHistory => [...oldHistory, currentLine]);
+        setHistoryPtr(historyPtr => historyPtr + 1);
     }
 
     return (

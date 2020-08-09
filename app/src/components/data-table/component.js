@@ -20,7 +20,6 @@ import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
 import createMuiTheme from "@material-ui/core/styles/createMuiTheme";
 import GlobalStyle from "../../global-style";
-import {StyledTexViewer} from "../tex-viewer/style";
 
 const tableIcons = {
     Add: forwardRef((props, ref) => <AddBox {...props} ref={ref}/>),
@@ -51,7 +50,6 @@ export default function DataTable() {
     const [data, setData] = useState(location.state.data);
 
     useEffect(() => {
-        console.log(location);
     }, []);
 
     const theme = createMuiTheme({

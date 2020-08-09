@@ -2,11 +2,12 @@ import React from 'react';
 import ReactDOM from 'react-dom';
 import * as serviceWorker from './serviceWorker';
 import App from "./app";
+import Store from "./store";
 
 ReactDOM.render(
-    <div>
+    <Store>
         <App />
-    </div>,
+    </Store>,
   document.getElementById('root')
 );
 
