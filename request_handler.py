@@ -19,15 +19,23 @@ def handle_request(request, request_types: iter, name=None):
     elif 'FETCH' in request_types:
         return fetch(request)
     elif 'PERSIST' in request_types:
-        return persist(request, name) # todo
+        return persist(request, name)  # todo
     elif 'LIST' in request_types:
         return handle_listings(request)
     elif 'NEXT' in request_types:
         return handle_context()
     elif 'BACK' in request_types:
         return handle_context()
+    elif 'NAVIGATE' in request_types:
+        return handle_navigation(request)
+    elif not request_types:
+        error_message = "request not currently supported"
+        LOG.error(error_message)
+        return prepare_response(json.dumps({'reason': error_message}), 400, 'application/json')
     else:
-        LOG.error("request combination {} is not understood".format(request_types))
+        error_message = "request combination {} is not understood".format(request_types)
+        LOG.error(error_message)
+        return prepare_response(json.dumps({'reason': error_message}), 400, 'application/json')
 
 
 def fetch(request):
@@ -35,14 +43,18 @@ def fetch(request):
     results = []
     for request_part in request_parts[1:]:
         if deductive_service.is_url(request_part):
-            content, content_type = fetch_service.fetch_from_url(request_part)
-            results.append({'content': json.dumps(content), 'content-type': content_type})
+            content, content_type, content_key = fetch_service.fetch_from_url(request_part)
+            results.append({
+                'content': content,
+                'content-type': content_type,
+                'content-key': content_key
+            })
         elif deductive_service.is_file(request_part):
             results.append(fetch_service.fetch_from_file(request_part))
         else:
             LOG.error("request {} is not understood".format(request))
             return prepare_response("request {} is not understood".format(request), 400, "text/plain")
-    return prepare_response(results[0]['content'], 200, results[0]['content-type']) # todo handle multiple
+    return prepare_response(json.dumps(results[0]), 200, results[0]['content-type'])  # todo handle multiple
 
 
 def persist(request, content_type, name):
@@ -74,6 +86,33 @@ def update_state(new_state: str):
 
 def handle_context():
     pass
+
+
+def handle_navigation(request):
+    request = request.split(' ')[-1]
+    if deductive_service.is_url(request):
+        content_key = state.add_to_cache(request)
+        return prepare_response(json.dumps(
+            {
+                'content': {
+                    'location': request,
+                    'type': 'external',
+                },
+                'content-key': content_key
+            }
+        ), 200, 'text/uri-list')
+    else:
+        content_key = state.add_to_cache(request)
+        return prepare_response(json.dumps(
+            {
+                'content': {
+                    'location': request,
+                    'type': 'internal',
+                },
+                'content-key': content_key
+
+            }
+        ), 200, 'text/uri-list')
 
 
 def prepare_response(content, status, content_type):

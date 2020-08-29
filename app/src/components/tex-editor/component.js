@@ -11,7 +11,7 @@ const TexEditor = ({className, onChangeHandler}) => {
 
     useEffect(() => {
         onChangeHandler(tex);
-    }, [tex]);
+    }, [tex, onChangeHandler]);
 
     const handleClearTexEvent = () => {
         setTex(() => "");

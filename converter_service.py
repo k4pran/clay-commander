@@ -2,6 +2,7 @@ from io import BytesIO
 import pandas as pd
 import numpy as np
 
+
 def csv_from_bytes(content: bytes):
     return to_csv(BytesIO(content))
 
@@ -51,3 +52,13 @@ def determine_data_type(date_type: np.dtype):
         return "numeric"
     else:
         return "string"
+
+
+def split_charset_from_content_type(content_type: str):
+    if ';' in content_type:
+        return tuple(content_type.split(';'))
+    else:
+        # default to utf-8
+        return content_type, "utf-8"
+
+

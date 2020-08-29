@@ -8,13 +8,13 @@ import {Context} from "../../store";
 const JsonViewer = () => {
 
     const location = useLocation();
-    const [state, dispatch] = useContext(Context);
+    const [, dispatch] = useContext(Context);
 
-    const [json, setJson] = useState(JSON.parse(location.state.json));
+    const [json,] = useState(location.state.json);
 
     useEffect(() => {
         dispatch({type: 'SET_CURRENT_PAGE', currentPage: 'json-viewer'});
-    }, []);
+    }, [dispatch]);
 
     return (
         <StyledJsonViewer>

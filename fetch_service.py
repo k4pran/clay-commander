@@ -1,3 +1,5 @@
+import json
+
 import db
 import deductive_service
 import converter_service
@@ -28,17 +30,39 @@ def external_fetch_any(location: str):
 
 def fetch_from_url(location: str, name=""):
     content_type, response = deductive_service.interpret_url_content_type(location)
+    content = None
     if content_type in url_as_content_types:
-        return location
-    elif content_type == 'JSON':
-        return state.ration_data(response.content.decode("utf-8")), 'application/json'
-    elif content_type == 'CSV':
-        df = converter_service.csv_from_bytes(response.content)
-        return converter_service.pandas_to_mat_table(name, df), 'text/csv'
-    elif content_type == 'SVG':
-        return response.content.decode("utf-8"), 'image/svg+xml'
-    elif content_type == 'HTML':
-        return response.content, 'text/html'
+        content = location
+    elif content_type == 'application/json':
+        return fetch_json(response.content)
+    elif content_type == 'text/csv':
+        return fetch_csv_from_bytes(response.content)
+    elif content_type == 'image/svg+xml':
+        content = response.content.decode("utf-8")
+    elif content_type == 'text/html':
+        content = response.content
+
+    content_key = state.add_to_cache(content)
+    return content, content_type, content_key
+
+
+def fetch_json(json_content):
+    if isinstance(json_content, bytes):
+        json_content = json_content.decode("utf-8")
+    json_content = state.ration_data(json_content)
+    content_key = state.add_to_cache(json_content)
+    return json.loads(json_content), 'application/json', content_key
+
+
+def fetch_csv_from_bytes(csv_bytes: bytes, name=None):
+    df = converter_service.csv_from_bytes(csv_bytes)
+
+    content_key = state.add_to_cache(df)
+    if not name:
+        name = ""
+
+    content = converter_service.pandas_to_mat_table(name, df)
+    return content, 'text/csv', content_key
 
 
 def fetch_from_file(location: str):

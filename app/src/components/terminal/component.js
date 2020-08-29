@@ -4,28 +4,18 @@ import axios from 'axios'
 import TerminalLine from "../terminal-line/component";
 import {StyledTerminal} from "./style";
 import GlobalStyle from "../../global-style";
-import cmdParser from './cmdParser'
 import {Context} from "../../store";
-
-
-const commands = [
-    "go home",
-    "display table",
-    "display images",
-    "fetch",
-    "list tables",
-    "list images",
-    "clear",
-    "clear history",
-];
+import Logger from "../../logger";
 
 const Terminal = () => {
+
+    const LOG = new Logger("Terminal");
 
     const ENTER_KEY = 13;
     const UP_KEY = 38;
     const DOWN_KEY = 40;
 
-    const [state, dispatch] = useContext(Context);
+    const [, dispatch] = useContext(Context);
 
     const [lines, setLines] = useState([]);
     const [history, setHistory] = useState([]);
@@ -35,6 +25,7 @@ const Terminal = () => {
     let routeHistory = useHistory();
 
     const _handleKeyDown = (e) => {
+
         switch (e.which) {
 
             case ENTER_KEY:
@@ -59,12 +50,15 @@ const Terminal = () => {
     };
 
     useEffect(() => {
-        dispatch({type: 'SET_CURRENT_PAGE', currentPage: 'terminal'});
         window.addEventListener('keydown', _handleKeyDown);
         return () => {
             window.removeEventListener('keydown', _handleKeyDown);
         };
-    }, []);
+    });
+
+    useEffect(() => {
+        dispatch({type: 'SET_CURRENT_PAGE', payload: 'terminal'});
+    }, [dispatch]);
 
     useEffect(() => {
         if (historyPtr > history.length - 1) {
@@ -73,7 +67,11 @@ const Terminal = () => {
         if (history[historyPtr] !== undefined) {
             setCurrentLine(history[historyPtr]);
         }
-    }, [historyPtr]);
+    }, [historyPtr, history]);
+
+    useEffect(() => {
+        LOG.debug("history updated : currently " + history.length + " items");
+    }, [history, LOG]);
 
     const handleLineChange = (e) => {
         setCurrentLine(e.target.value);
@@ -85,43 +83,30 @@ const Terminal = () => {
         })
     }
 
-    function handleFetch(args) {
-        axios.get('/fetch', {
-            params: {
-                request: args
-            }
+    function handleTex() {
+        routeHistory.push({
+            pathname: '/tex'
         })
-            .then(res => {
-                let data = res.data;
-                setLines(lines => [...lines, {
-                    key: lines.length, text: "imported " + data.name, lineStyle: "info"
-                }]);
-            })
-            .catch(err => {
-                console.log(err.response.data);
-                setLines(lines => [...lines, {
-                    key: lines.length, text: err.response.data, lineStyle: "error"
-                }]);
-                setCurrentLine("");
-            });
     }
 
     function executeRequest(args) {
+        LOG.info("received request: " + args);
         axios.get('/request', {
             params: {
                 request: args
             }
         })
             .then(res => {
-                console.log(res);
-                handle_request_success(res.data, res.headers['content-type'].split(";")[0]);
+                handleRequestSuccess(res.data.content, res.headers['content-type'].split(";")[0], res.data['content-key']);
             })
             .catch(err => {
-                handle_request_error(err)
+                handleRequestError(err)
             });
     }
 
-    function handle_request_success(data, contentType) {
+    function handleRequestSuccess(content, contentType, contentKey) {
+        LOG.info("request success for content " + contentType + " : " + contentKey);
+        updateFetchState(contentKey);
         setLines(lines => [...lines, {
             key: lines.length, text: "request executed successfully", lineStyle: "info"
         }]);
@@ -129,25 +114,32 @@ const Terminal = () => {
             routeHistory.push({
                 pathname: '/json',
                 state: {
-                    json: data,
+                    json: content,
                 }
             })
-        }
-        else if (contentType === "text/csv") {
-            console.log(data);
-            handleDisplayTable(data)
+        } else if (contentType === "text/csv") {
+            handleDisplayTable(content)
+        } else if (contentType === "text/uri-list") {
+            handleNavigation(content)
         }
     }
 
-    function handle_request_error(err) {
-        console.log(err.response.data);
+    function handleRequestError(err) {
+        if (err.response === undefined) {
+            LOG.error("Unhandled exception when handling request, history will not be updated: " + err);
+            return;
+        }
+        let errMessage = err.response.data === undefined ?
+            "No response from server" : err.response.data.reason;
+        LOG.error(errMessage);
         setLines(lines => [...lines, {
-            key: lines.length, text: err.response.data, lineStyle: "error"
+            key: lines.length, text: errMessage, lineStyle: "error"
         }]);
         updateHistory();
     }
 
     function handleDisplayTable(data) {
+        LOG.debug("executing request : displaying table");
         routeHistory.push({
             pathname: '/table',
             state: {
@@ -159,6 +151,7 @@ const Terminal = () => {
     }
 
     function handleDisplayImages(args) {
+        LOG.debug("executing request : displaying images");
         axios.get('/display/images', {
             params: {
                 request: args
@@ -166,7 +159,6 @@ const Terminal = () => {
         })
             .then(res => {
                 let data = res.data;
-                // console.log(data);
                 routeHistory.push({
                     pathname: '/gallery',
                     state: {
@@ -182,83 +174,60 @@ const Terminal = () => {
             });
     }
 
-    function handleListImages() {
-        axios.get('/list/images')
-            .then(res => {
-                let imageNames = res.data;
-                imageNames.forEach(imageName => {
-                    setLines(lines => [...lines, {
-                        key: lines.length, text: imageName, lineStyle: "info"
-                    }]);
-                });
+    function handleNavigation(request) {
+        LOG.debug("executing request : navigation");
+        let type = request['type'];
+        let location = request['location'];
+        if (type === "external") {
+            LOG.warn("External navigation not implemented")
+            // todo
+        } else if (type === "internal") {
+            LOG.info("navigating to " + request['location'])
+            if (location[0] !== ["/"]) {
+                location = "/" + location;
+            }
+            routeHistory.push({
+                pathname: location
             })
-            .catch(err => {
-                setLines(lines => [...lines, {
-                    key: lines.length, text: err, lineStyle: "error"
-                }]);
-                setCurrentLine("");
-            });
-    }
-
-    function handleListTables() {
-        axios.get('/list/tables')
-            .then(res => {
-                let tableNames = res.data;
-                tableNames.forEach(tableName => {
-                    setLines(lines => [...lines, {
-                        key: lines.length, text: tableName, lineStyle: "info"
-                    }]);
-                });
-            })
-            .catch(err => {
-                setLines(lines => [...lines, {
-                    key: lines.length, text: err, lineStyle: "error"
-                }]);
-                setCurrentLine("");
-            });
+        } else {
+            LOG.error("Unknown navigation type: " + type)
+        }
     }
 
     function processCommand() {
+        LOG.info("parsing command : " + currentLine);
         let cmdParts = currentLine.split("--");
-        let cmd = cmdParser.determineCommand(commands, currentLine);
-        console.log(cmd);
         let args = cmdParts.slice(1).join();
 
         setLines(lines => [...lines, {
             key: lines.length, text: currentLine, lineStyle: "normal"
         }]);
         setCurrentLine("");
-        if (cmd === "go home") {
+        if (currentLine === "go home") {
             handleHome();
             return;
-        } else if (cmd === "display table") {
+        } else if (currentLine === "go tex") {
+            handleTex();
+            return;
+        } else if (currentLine === "display table") {
             handleDisplayTable(args);
             return;
-        } else if (cmd === "display images") {
+        } else if (currentLine === "display images") {
             handleDisplayImages(args);
             return;
-        }
-        // else if (cmd === "fetch") {
-        //     handleFetch(args);
-        // }
-        // else if (cmd === "list tables") {
-        //     handleListTables();
-        // }
-        // else if (cmd === "list images") {
-        //     handleListImages();
-        // }
-
-        else if (cmd === "clear history") {
+        } else if (currentLine === "clear history") {
+            let nbItems = lines.length;
             setHistory(() => []);
             setHistoryPtr(() => 0);
             setLines(lines => [...lines, {
                 key: lines.length, text: "history cleared", lineStyle: "success"
             }]);
+            LOG.debug("history cleared : " + nbItems + " items removed");
             return
-        } else if (cmd === "clear") {
+        } else if (currentLine === "clear") {
             setLines(() => [])
         } else {
-            executeRequest(cmd);
+            executeRequest(currentLine);
             return;
         }
         if (currentLine.length > 0) {
@@ -271,6 +240,12 @@ const Terminal = () => {
     function updateHistory() {
         setHistory(oldHistory => [...oldHistory, currentLine]);
         setHistoryPtr(historyPtr => historyPtr + 1);
+    }
+
+    function updateFetchState(contentKey) {
+        dispatch({type: 'SET_CURRENT_CONTENT_KEY', payload: contentKey});
+        dispatch({type: 'ADD_FETCHED_CONTENT', payload: contentKey});
+        LOG.debug("fetched state updated");
     }
 
     return (

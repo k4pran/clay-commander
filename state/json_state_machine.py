@@ -1,3 +1,5 @@
+import json
+
 import pandas as pd
 
 JSON_MAX = 1000

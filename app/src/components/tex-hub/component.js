@@ -7,7 +7,7 @@ import {Context} from "../../store";
 
 const TexHub = () => {
 
-    const [state, dispatch] = useContext(Context);
+    const [, dispatch] = useContext(Context);
 
     const [tex, setTex] = useState();
 
@@ -17,7 +17,7 @@ const TexHub = () => {
 
     useEffect(() => {
         dispatch({type: 'SET_CURRENT_PAGE', currentPage: 'tex'});
-    }, []);
+    }, [dispatch]);
 
     return (
         <StyledTexHub>

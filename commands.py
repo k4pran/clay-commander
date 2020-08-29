@@ -25,4 +25,12 @@ context_back_aliases = {
     'back'
 }
 
+navigation_aliases = {
+    'go',
+    'go to',
+    'nav',
+    'nav to',
+    'navigate to'
+}
+
 context_based = set.union(context_back_aliases, context_next_aliases)

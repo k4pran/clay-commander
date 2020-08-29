@@ -3,20 +3,10 @@ from flask import Flask, jsonify, request, Response
 import fetch_service
 import request_handler
 import request_parser
-import state
 from exceptions.import_exceptions import *
 
 app = Flask(__name__)
 
-
-# @app.route('/fetch')
-# def import_data():
-#     incoming_request = request.args.get("request")
-#     request_types = request_parser.parse_request(incoming_request)
-#     try:
-#         return request_handler.handle_request(incoming_request, request_types)
-#     except UnknownResourceException as e:
-#         return Response(str(e), status=404, mimetype='application/json')
 
 @app.route('/request')
 def handle_request():

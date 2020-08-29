@@ -23,6 +23,8 @@ def parse_request_str(request):
         request_types.append('NEXT')
     if any([alias in request for alias in context_back_aliases]):
         request_types.append('BACK')
+    if any([alias in request for alias in navigation_aliases]):
+        request_types.append('NAVIGATE')
     return request_types
 
 

@@ -1,5 +1,5 @@
-import React, {useEffect, useState} from 'react';
-import {StyledTexEditorMenu, texEditorThemes} from "./style";
+import React, {useState} from 'react';
+import {StyledTexEditorMenu} from "./style";
 import Grid from "@material-ui/core/Grid";
 import {Assignment, ClearAllOutlined} from "@material-ui/icons";
 import Slider from "@material-ui/core/Slider";

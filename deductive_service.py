@@ -5,12 +5,24 @@ import requests
 import validators
 import pandas as pd
 
+import converter_service
 from exceptions.import_exceptions import UnknownResourceException
 
 ssl._create_default_https_context = ssl._create_unverified_context
 
 MAGIC_BYTES = {
     'gzip': b'\x1f\x8b'
+}
+
+mappable_content_types = {
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "application/pdf",
+    "image/svg+xml",
+    "application/json",
+    "text/csv",
+    "text/html"
 }
 
 
@@ -28,42 +40,24 @@ def interpret_url_content_type(url: str) -> (str, requests.Response):
         url = "http://" + url
     response = requests.get(url)
     content_type = response.headers['content-type']
+    content_type, _ = converter_service.split_charset_from_content_type(content_type)
 
-    if "image/jpeg" in content_type:
-        content_type = "JPEG"
+    if "svg" in content_type:
+        content_type = "image/svg+xml"
 
-    elif "image/jpg" in content_type:
-        content_type = "JPG"
-
-    elif "image/png" in content_type:
-        content_type = "PNG"
-
-    elif "application/pdf" in content_type:
-        content_type = "PDF"
-
-    elif "image/svg+xml" in content_type or 'svg' in content_type:
-        content_type = "SVG"
-
-    elif "application/json" in content_type:
-        content_type = "JSON"
-
-    elif "text/csv" in content_type:
-        content_type = "CSV"
-
-    elif "text/html" in content_type:
-        content_type = "HTML"
-
-    elif "text" in content_type or content_type == "application/octet-stream":
+    elif content_type == "application/octet-stream":
         content_type = interpret_content_type_by_bytes(response.content)
+    elif content_type not in mappable_content_types:
+        pass # todo error
     return content_type, response
 
 
 def interpret_content_type_by_bytes(content: bytes):
     if is_gzip(content):
-        return "GZIP"
+        return "GZIP" # todo
 
     if is_content_csv(content):
-        return "CSV"
+        return "CSV" # todo
 
 
 def is_gzip(content: bytes):

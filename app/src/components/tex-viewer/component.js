@@ -49,7 +49,7 @@ const TexViewer = ({className, tex}) => {
         if (mathJax) {
             mathJax.typeset();
         }
-    }, [tex]);
+    }, [tex, mathJax]);
 
     const handleFontSizeChange = (newFontSize) => {
         setFontSize(newFontSize);

@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import {StyledTexViewerMenu} from "./style";
 import Grid from "@material-ui/core/Grid";
 import Slider from "@material-ui/core/Slider";

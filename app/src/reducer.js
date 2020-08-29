@@ -3,22 +3,17 @@ const Reducer = (state, action) => {
         case 'SET_CURRENT_PAGE':
             return {
                 ...state,
-                currentPage: action.currentPage
+                currentPage: action.payload
             };
-        case 'ADD_POST':
+        case 'SET_CURRENT_CONTENT_KEY':
             return {
                 ...state,
-                posts: state.posts.concat(action.payload)
+                currentContentKey: action.payload
             };
-        case 'REMOVE_POST':
+        case 'ADD_FETCHED_CONTENT':
             return {
                 ...state,
-                posts: state.posts.filter(post => post.id !== action.payload)
-            };
-        case 'SET_ERROR':
-            return {
-                ...state,
-                error: action.payload
+                posts: state.fetchedContent.concat(action.payload)
             };
         default:
             return state;
