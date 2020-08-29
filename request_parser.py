@@ -25,6 +25,10 @@ def parse_request_str(request):
         request_types.append('BACK')
     if any([alias in request for alias in navigation_aliases]):
         request_types.append('NAVIGATE')
+    if any([alias in request for alias in gallery_control_add_aliases]):
+        request_types.append('ADD_IMAGE')
+    if any([alias in request for alias in gallery_control_add_aliases]):
+        request_types.append('REMOVE_IMAGE')
     return request_types
 
 

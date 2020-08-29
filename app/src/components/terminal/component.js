@@ -174,20 +174,21 @@ const Terminal = () => {
             });
     }
 
-    function handleNavigation(request) {
+    function handleNavigation(content) {
         LOG.debug("executing request : navigation");
-        let type = request['type'];
-        let location = request['location'];
+        let type = content['type'];
+        let location = content['location'];
         if (type === "external") {
             LOG.warn("External navigation not implemented")
             // todo
         } else if (type === "internal") {
-            LOG.info("navigating to " + request['location'])
+            LOG.info("navigating to " + content['location'])
             if (location[0] !== ["/"]) {
                 location = "/" + location;
             }
             routeHistory.push({
-                pathname: location
+                pathname: location,
+                state: content.state
             })
         } else {
             LOG.error("Unknown navigation type: " + type)

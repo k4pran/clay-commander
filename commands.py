@@ -33,4 +33,20 @@ navigation_aliases = {
     'navigate to'
 }
 
+gallery_control_add_aliases = {
+    'add image',
+    'add img'
+}
+
+gallery_control_remove_aliases = {
+    'remove image',
+    'remove img',
+    'rm image',
+    'rm img',
+    'delete image',
+    'delete img',
+    'del image',
+    'del img'
+}
+
 context_based = set.union(context_back_aliases, context_next_aliases)

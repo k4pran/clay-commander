@@ -1,0 +1,2 @@
+class ResponseFormatException(Exception):
+    pass

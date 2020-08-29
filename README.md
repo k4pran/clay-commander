@@ -18,3 +18,5 @@
   - [ ] Implement logic for adding / removing images in gallery (by command and buttons)
   - [ ] Give every component the option to launch as a modal
   - [ ] Add navigation history into state
+  - [ ] Handle keys for non-hashable data like lists
+  - [ ] Create a more consistent common structure for http payloads

@@ -51,5 +51,13 @@ def update_state():
         return Response(str(e), status=404, mimetype='application/json')
 
 
+@app.route('/state/gallery')
+def get_gallery():
+    try:
+        return request_handler.fetch_gallery()
+    except UnknownResourceException as e:
+        return Response(str(e), status=404, mimetype='application/json')
+
+
 if __name__ == "__main__":
     app.run()

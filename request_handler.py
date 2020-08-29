@@ -8,6 +8,7 @@ import persistence_service
 import deductive_service
 import request_parser
 import state
+from exceptions.response_format_exception import ResponseFormatException
 
 LOG = logging.getLogger(__name__)
 
@@ -84,6 +85,18 @@ def update_state(new_state: str):
     return prepare_response(json.dumps(state_update_result), 200, 'application/json')
 
 
+def fetch_gallery():
+    gallery = state.get_current_gallery()
+    return prepare_response(
+        {'content':
+            {
+                'state': gallery
+            },
+            'content-type': 'image/*',
+            'content-key': 18273847} # todo
+        , 200, 'image/*')
+
+
 def handle_context():
     pass
 
@@ -115,6 +128,18 @@ def handle_navigation(request):
         ), 200, 'text/uri-list')
 
 
+def handle_add_image():
+    pass
+
+
+def handle_remove_image():
+    pass
+
+
 def prepare_response(content, status, content_type):
+    if isinstance(content, dict):
+        content = json.dumps(content)
+    if not isinstance(content, str):
+        raise ResponseFormatException()
     response = Response(content, status=status, mimetype=content_type)
     return response
