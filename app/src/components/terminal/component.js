@@ -188,7 +188,9 @@ const Terminal = () => {
             }
             routeHistory.push({
                 pathname: location,
-                state: content.state
+                state: {
+                    imageData: content
+                }
             })
         } else {
             LOG.error("Unknown navigation type: " + type)

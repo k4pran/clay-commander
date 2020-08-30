@@ -1,14 +1,12 @@
-import logging
 import json
-
-from flask import Response
+import logging
 
 import fetch_service
 import persistence_service
 import deductive_service
 import request_parser
 import state
-from exceptions.response_format_exception import ResponseFormatException
+from response import prepare_response
 
 LOG = logging.getLogger(__name__)
 
@@ -20,7 +18,7 @@ def handle_request(request, request_types: iter, name=None):
     elif 'FETCH' in request_types:
         return fetch(request)
     elif 'PERSIST' in request_types:
-        return persist(request, name)  # todo
+        return persist(request, content_type="", name="")  # todo
     elif 'LIST' in request_types:
         return handle_listings(request)
     elif 'NEXT' in request_types:
@@ -64,7 +62,7 @@ def persist(request, content_type, name):
 
 def fetch_for_keeps(request, name=None):
     result = fetch(request)
-    return persist(result, name)
+    return persist(result, content_type="", name="") # todo
 
 
 def handle_listings(request):
@@ -82,7 +80,7 @@ def handle_listings(request):
 
 def update_state(new_state: str):
     state_update_result = state.update_state(json.loads(new_state))
-    return prepare_response(json.dumps(state_update_result), 200, 'application/json')
+    return prepare_response(state_update_result, 200, 'application/json')
 
 
 def fetch_gallery():
@@ -92,8 +90,7 @@ def fetch_gallery():
             {
                 'state': gallery
             },
-            'content-type': 'image/*',
-            'content-key': 18273847} # todo
+            'content-key': 18273847}  # todo
         , 200, 'image/*')
 
 
@@ -105,7 +102,7 @@ def handle_navigation(request):
     request = request.split(' ')[-1]
     if deductive_service.is_url(request):
         content_key = state.add_to_cache(request)
-        return prepare_response(json.dumps(
+        return prepare_response(
             {
                 'content': {
                     'location': request,
@@ -113,10 +110,10 @@ def handle_navigation(request):
                 },
                 'content-key': content_key
             }
-        ), 200, 'text/uri-list')
+            , 200, 'text/uri-list')
     else:
         content_key = state.add_to_cache(request)
-        return prepare_response(json.dumps(
+        return prepare_response(
             {
                 'content': {
                     'location': request,
@@ -125,7 +122,7 @@ def handle_navigation(request):
                 'content-key': content_key
 
             }
-        ), 200, 'text/uri-list')
+            , 200, 'text/uri-list')
 
 
 def handle_add_image():
@@ -134,12 +131,3 @@ def handle_add_image():
 
 def handle_remove_image():
     pass
-
-
-def prepare_response(content, status, content_type):
-    if isinstance(content, dict):
-        content = json.dumps(content)
-    if not isinstance(content, str):
-        raise ResponseFormatException()
-    response = Response(content, status=status, mimetype=content_type)
-    return response
