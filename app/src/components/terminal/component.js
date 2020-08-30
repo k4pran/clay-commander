@@ -121,6 +121,10 @@ const Terminal = () => {
             handleDisplayTable(content)
         } else if (contentType === "text/uri-list") {
             handleNavigation(content)
+        } else if (contentType === "text/plain") {
+            setLines(lines => [...lines, {
+                key: lines.length, text: content, lineStyle: "info"
+            }]);
         }
     }
 
@@ -138,14 +142,14 @@ const Terminal = () => {
         updateHistory();
     }
 
-    function handleDisplayTable(data) {
+    function handleDisplayTable(content) {
         LOG.debug("executing request : displaying table");
         routeHistory.push({
             pathname: '/table',
             state: {
-                title: data.title,
-                columns: data.columns,
-                data: data.data
+                title: content.title,
+                columns: content.columns,
+                data: content.data
             }
         })
     }
@@ -158,12 +162,10 @@ const Terminal = () => {
             }
         })
             .then(res => {
-                let data = res.data;
+                let content = res.data.content;
                 routeHistory.push({
                     pathname: '/gallery',
-                    state: {
-                        imageData: data
-                    }
+                    state: content
                 })
             })
             .catch(err => {
@@ -188,9 +190,7 @@ const Terminal = () => {
             }
             routeHistory.push({
                 pathname: location,
-                state: {
-                    imageData: content
-                }
+                state: content
             })
         } else {
             LOG.error("Unknown navigation type: " + type)
