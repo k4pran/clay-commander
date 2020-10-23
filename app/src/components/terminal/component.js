@@ -246,9 +246,11 @@ const Terminal = () => {
     }
 
     function updateFetchState(contentKey) {
-        dispatch({type: 'SET_CURRENT_CONTENT_KEY', payload: contentKey});
-        dispatch({type: 'ADD_FETCHED_CONTENT', payload: contentKey});
-        LOG.debug("fetched state updated");
+        if (contentKey !== undefined) {
+            dispatch({type: 'SET_CURRENT_CONTENT_KEY', payload: contentKey});
+            dispatch({type: 'ADD_FETCHED_CONTENT', payload: contentKey});
+            LOG.debug("fetched state updated");
+        }
     }
 
     return (

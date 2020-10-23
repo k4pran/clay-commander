@@ -27,6 +27,10 @@ def handle_request(request, request_types: iter, name=None):
         return handle_context()
     elif 'NAVIGATE' in request_types:
         return handle_navigation(request)
+    elif 'ADD_IMAGE' in request_types:
+        return handle_add_image(request)
+    elif 'REMOVE_IMAGE' in request_types:
+        return handle_remove_image(request)
     elif not request_types:
         error_message = "request not currently supported"
         LOG.error(error_message)
@@ -125,9 +129,16 @@ def handle_navigation(request):
             , 200, 'text/uri-list')
 
 
-def handle_add_image():
-    pass
+def handle_add_image(request):
+    image_location = request.split(' ')[-1]
+    if deductive_service.is_url(image_location):
+        state.add_to_gallery(image_location)
+        success_response = {'content': "successfully added image {} to gallery".format(image_location)}
+        return prepare_response(success_response, 200, 'text/plain')
+    else:
+        error_response = {'content': "Invalid image url: " + image_location}
+        return prepare_response(error_response, 400, 'text/plain')
 
 
-def handle_remove_image():
+def handle_remove_image(request):
     pass
