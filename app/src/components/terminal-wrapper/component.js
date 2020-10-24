@@ -7,14 +7,36 @@ import TerminalLine from "../terminal-line/component";
 import {StyledTerminal} from "../terminal/style";
 import GlobalStyle from "../../global-style";
 
+const PAGE_CONTENT = {
+    json: {
+        location: '/json',
+        handles: ['application/json'],
+        content: {json: "{}"}
+    },
+    gallery: {
+        location: '/gallery',
+        handles: [],
+        content: {}
+    },
+    table: {
+        location: '/table',
+        handles: ['csv'],
+        content: {}
+    },
+    tex: {
+        location: '/tex',
+        handles: [],
+        content: {}
+    }
+}
+
+const ENTER_KEY = 13;
+const UP_KEY = 38;
+const DOWN_KEY = 40;
 
 const TerminalWrapper = ({child}) => {
 
     const LOG = new Logger("Terminal");
-
-    const ENTER_KEY = 13;
-    const UP_KEY = 38;
-    const DOWN_KEY = 40;
 
     const [, dispatch] = useContext(Context);
 
@@ -79,18 +101,6 @@ const TerminalWrapper = ({child}) => {
         setCurrentLine(e.target.value);
     };
 
-    function handleHome() {
-        routeHistory.push({
-            pathname: '/'
-        })
-    }
-
-    function handleTex() {
-        routeHistory.push({
-            pathname: '/tex'
-        })
-    }
-
     function executeRequest(args) {
         LOG.info("received request: " + args);
         axios.get('/request', {
@@ -125,7 +135,10 @@ const TerminalWrapper = ({child}) => {
                 }
             })
         } else if (contentType === "text/csv") {
-            handleDisplayTable(content)
+            routeHistory.push({
+                pathname: '/table',
+                content: content
+            });
         } else if (contentType === "text/uri-list") {
             handleNavigation(content)
         } else if (contentType === "text/plain") {
@@ -149,39 +162,17 @@ const TerminalWrapper = ({child}) => {
         updateHistory();
     }
 
-    function handleDisplayTable(content) {
-        LOG.debug("executing request : displaying table");
-        routeHistory.push({
-            pathname: '/table',
-            state: {
-                title: content.title,
-                columns: content.columns,
-                data: content.data
-            }
-        })
-    }
-
-    function handleDisplayImages(args) {
-        LOG.debug("executing request : displaying images");
-        axios.get('/display/images', {
-            params: {
-                request: args
-            }
-        })
-            .then(res => {
-                let content = res.data.content;
-                routeHistory.push({
-                    pathname: '/gallery',
-                    state: content
-                })
-            })
-            .catch(err => {
-                setLines(lines => [...lines, {
-                    key: lines.length, text: err, lineStyle: "error"
-                }]);
-                setCurrentLine("");
-            });
-    }
+    // function handleDisplayTable(content) {
+    //     LOG.debug("executing request : displaying table");
+    //     routeHistory.push({
+    //         pathname: '/table',
+    //         state: {
+    //             title: content.title,
+    //             columns: content.columns,
+    //             data: content.data
+    //         }
+    //     })
+    // }
 
     function handleNavigation(content) {
         LOG.debug("executing request : navigation");
@@ -214,19 +205,7 @@ const TerminalWrapper = ({child}) => {
         }]);
         setCurrentLine("");
 
-        if (currentLine === "go home") {
-            handleHome();
-            return;
-        } else if (currentLine === "go tex") {
-            handleTex();
-            return;
-        } else if (currentLine === "display table") {
-            handleDisplayTable(args);
-            return;
-        } else if (currentLine === "display images") {
-            handleDisplayImages(args);
-            return;
-        } else if (currentLine === "clear history") {
+        if (currentLine === "clear history") {
             let nbItems = lines.length;
             setHistory(() => []);
             setHistoryPtr(() => 0);

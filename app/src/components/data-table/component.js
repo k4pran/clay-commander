@@ -49,9 +49,10 @@ export default function DataTable() {
     const location = useLocation();
     const [, dispatch] = useContext(Context);
 
-    const [title] = useState(location.state.title);
-    const [columns] = useState(location.state.columns);
-    const [data] = useState(location.state.data);
+    // const [title] = useState(location.state.title);
+    // const [columns] = useState(location.state.columns);
+    // const [data] = useState(location.state.data);
+    const [tableContent, setTableContent] = useState(location.content);
 
     useEffect(() => {
         dispatch({type: 'SET_CURRENT_PAGE', currentPage: 'table'});
@@ -83,9 +84,9 @@ export default function DataTable() {
                 <MuiThemeProvider theme={theme}>
                     <MaterialTable
                         icons={tableIcons}
-                        title={title}
-                        columns={columns}
-                        data={data}
+                        title={tableContent.title}
+                        columns={tableContent.columns}
+                        data={tableContent.data}
                         options={{
                             headerStyle: {
                                 backgroundColor: '#01579b',
