@@ -31,17 +31,20 @@ const JsonViewer = ({content}) => {
     const location = useLocation();
     const [, dispatch] = useContext(Context);
 
-    // const [json, setJson] = useState(
-    //     location.state ? safeJsonFromLocation(location) : safeJsonFromProp(content));
+    const [json, setJson] = useState(
+        location.state ? safeJsonFromLocation(location) : safeJsonFromProp(content));
 
     useEffect(() => {
         dispatch({type: 'SET_CURRENT_PAGE', currentPage: 'json-viewer'});
-        console.log("HERE")
-    }, [dispatch, content]);
+    }, [dispatch]);
+
+    useEffect(() => {
+        setJson(() => safeJsonFromProp(content))
+    }, [content]);
 
     return (
         <StyledJsonViewer>
-            <ReactJson src={content}/>
+            <ReactJson src={json}/>
         </StyledJsonViewer>
     )
 };
