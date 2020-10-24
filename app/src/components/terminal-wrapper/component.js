@@ -6,6 +6,7 @@ import axios from "axios";
 import TerminalLine from "../terminal-line/component";
 import {StyledTerminal} from "../terminal/style";
 import GlobalStyle from "../../global-style";
+import JsonViewer from "../json-viewer/component";
 
 
 const TerminalWrapper = ({child}) => {
@@ -256,10 +257,10 @@ const TerminalWrapper = ({child}) => {
         dispatch({type: 'ADD_FETCHED_CONTENT', payload: contentKey});
         LOG.debug("fetched state updated");
     }
-
+//            {child({content: {json: json}})}
     return (
         <div>
-            {child({content: {json: json}})}
+            <JsonViewer content={json} />
             <StyledTerminal>
                 <GlobalStyle terminal={true}/>
                 {lines.map(line => (
