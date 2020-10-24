@@ -14,10 +14,10 @@ const safeJsonFromLocation = (location) => {
 }
 
 const safeJsonFromProp = (content) => {
-    if (content === undefined || content.json === undefined) {
+    if (content === undefined || content === undefined) {
         return JSON.parse("{}");
     }
-    return jsonify(content.json);
+    return jsonify(content);
 }
 
 
@@ -31,16 +31,17 @@ const JsonViewer = ({content}) => {
     const location = useLocation();
     const [, dispatch] = useContext(Context);
 
-    const [json, setJson] = useState(
-        location.state ? safeJsonFromLocation(location) : safeJsonFromProp(content));
+    // const [json, setJson] = useState(
+    //     location.state ? safeJsonFromLocation(location) : safeJsonFromProp(content));
 
     useEffect(() => {
         dispatch({type: 'SET_CURRENT_PAGE', currentPage: 'json-viewer'});
-    }, [dispatch, json]);
+        console.log("HERE")
+    }, [dispatch, content]);
 
     return (
         <StyledJsonViewer>
-            <ReactJson src={json}/>
+            <ReactJson src={content}/>
         </StyledJsonViewer>
     )
 };
