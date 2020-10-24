@@ -14,10 +14,10 @@ const safeJsonFromLocation = (location) => {
 }
 
 const safeJsonFromProp = (content) => {
-    if (content === undefined || content === undefined) {
+    if (content === undefined || content.json === undefined) {
         return JSON.parse("{}");
     }
-    return jsonify(content);
+    return jsonify(content.json);
 }
 
 

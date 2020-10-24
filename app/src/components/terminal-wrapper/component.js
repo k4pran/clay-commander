@@ -6,7 +6,6 @@ import axios from "axios";
 import TerminalLine from "../terminal-line/component";
 import {StyledTerminal} from "../terminal/style";
 import GlobalStyle from "../../global-style";
-import JsonViewer from "../json-viewer/component";
 
 
 const TerminalWrapper = ({child}) => {
@@ -23,7 +22,7 @@ const TerminalWrapper = ({child}) => {
     const [history, setHistory] = useState([]);
     const [historyPtr, setHistoryPtr] = useState(0);
     const [currentLine, setCurrentLine] = useState("");
-    const [json, setJson] = useState("{}")
+    const [content, setContent] = useState({})
 
     let routeHistory = useHistory();
 
@@ -61,8 +60,7 @@ const TerminalWrapper = ({child}) => {
 
     useEffect(() => {
         dispatch({type: 'SET_CURRENT_PAGE', payload: 'terminal'});
-        console.log("ONE " + JSON.stringify(json))
-    }, [dispatch, json]);
+    }, [dispatch]);
 
     useEffect(() => {
         if (historyPtr > history.length - 1) {
@@ -115,8 +113,11 @@ const TerminalWrapper = ({child}) => {
             key: lines.length, text: "request executed successfully", lineStyle: "info"
         }]);
         if (contentType === "application/json") {
-            setJson(() => content)
-            return;
+            // setContent(state => ({ todo only if on json viewer
+            //         ...state,
+            //         json: content
+            //     }
+            // ))
             routeHistory.push({
                 pathname: '/json',
                 state: {
@@ -257,10 +258,10 @@ const TerminalWrapper = ({child}) => {
         dispatch({type: 'ADD_FETCHED_CONTENT', payload: contentKey});
         LOG.debug("fetched state updated");
     }
-//            {child({content: {json: json}})}
+
     return (
         <div>
-            <JsonViewer content={json} />
+            {child({content})}
             <StyledTerminal>
                 <GlobalStyle terminal={true}/>
                 {lines.map(line => (
