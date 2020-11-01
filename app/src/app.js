@@ -5,7 +5,6 @@ import Terminal from "./components/terminal/component";
 import TexHub from "./components/tex-hub/component";
 import ImageViewer from "./components/image-gallery/component";
 import JsonViewer from "./components/json-viewer/component";
-import TerminalWrapper from "./components/terminal-wrapper/component";
 
 const App = () => {
     return (
