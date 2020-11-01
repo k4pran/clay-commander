@@ -1,4 +1,4 @@
-import React, {useState} from "react";
+import React, {useEffect, useState} from "react";
 import {useLocation} from "react-router-dom";
 import ImageGallery from "react-image-gallery";
 import "react-image-gallery/styles/css/image-gallery.css";
@@ -13,17 +13,25 @@ const example_gallery = [
     }
 ];
 
-const safeInitialize = (content) => {
+const safeInitializeFromProps = (content) => {
     LOG.info("Initializing gallery")
     return content === undefined ? example_gallery : content;
+}
+
+const safeInitializeFromLocation = (location) => {
+    LOG.info("Initializing gallery")
+    if (location.state === undefined || location.state.content === undefined) {
+        return example_gallery;
+    }
+    return location.state.content;
 }
 
 const ImageViewer = (content) => {
 
     const location = useLocation();
     const [images, setImages] = useState(
-        content === undefined ? safeInitialize(content)
-            : location.state);
+        content === undefined ? safeInitializeFromProps(content)
+            : safeInitializeFromLocation(location));
 
     return (
         <ImageGallery items={images}/>

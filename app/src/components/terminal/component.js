@@ -6,7 +6,7 @@ import {StyledTerminal} from "./style";
 import GlobalStyle from "../../global-style";
 import Logger from "../../logger";
 
-const Terminal = () => {
+const Terminal = ({child}) => {
 
     const LOG = new Logger("Terminal");
 
@@ -18,6 +18,7 @@ const Terminal = () => {
     const [history, setHistory] = useState([]);
     const [historyPtr, setHistoryPtr] = useState(0);
     const [currentLine, setCurrentLine] = useState("");
+    const [content, setContent] = useState({})
 
     let routeHistory = useHistory();
 
@@ -211,27 +212,30 @@ const Terminal = () => {
     }
 
     return (
-        <StyledTerminal>
-            <GlobalStyle terminal={true}/>
-            {lines.map(line => (
+       <div>
+            {child === undefined ? <div style={{display: 'none'}}/> : child({content})}
+            <StyledTerminal>
+                <GlobalStyle terminal={true}/>
+                {lines.map(line => (
+                    <TerminalLine
+                        key={line.key}
+                        initReadOnly={true}
+                        focus={false}
+                        handleLineChange={handleLineChange}
+                        value={line.text}
+                        lineStyle={line.lineStyle}
+                    />
+                ))}
                 <TerminalLine
-                    key={line.key}
-                    initReadOnly={true}
-                    focus={false}
+                    key={"current line"}
+                    initReadOnly={false}
+                    focus={true}
                     handleLineChange={handleLineChange}
-                    value={line.text}
-                    lineStyle={line.lineStyle}
+                    value={currentLine}
+                    lineStyle={"normal"}
                 />
-            ))}
-            <TerminalLine
-                key={"current line"}
-                initReadOnly={false}
-                focus={true}
-                handleLineChange={handleLineChange}
-                value={currentLine}
-                lineStyle={"normal"}
-            />
-        </StyledTerminal>
+            </StyledTerminal>
+        </div>
     )
 };
 

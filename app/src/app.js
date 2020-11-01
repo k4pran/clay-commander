@@ -19,15 +19,10 @@ const App = () => {
                 <TexHub/>
             </Route>
             <Route exact path="/gallery">
-                <ImageViewer/>
-                <Terminal/>
+                <Terminal child={ImageViewer}/>
             </Route>
             <Route exact path="/json">
-                <JsonViewer/>
-                <Terminal/>
-            </Route>
-            <Route exact path="/test">
-                <TerminalWrapper child={JsonViewer}/>
+                <Terminal child={JsonViewer}/>
             </Route>
         </BrowserRouter>
     )
