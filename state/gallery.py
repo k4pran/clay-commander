@@ -1,8 +1,3 @@
-import asyncio
-import threading
-
-import event_publisher
-
 images = []
 
 
@@ -21,7 +16,6 @@ def add_to_gallery(url, name="", description=""):
         'thumbnailTitle': name,
         'description': description
     })
-    on_gallery_updated()
 
 
 def remove_from_gallery_by_url(url):
@@ -31,13 +25,11 @@ def remove_from_gallery_by_url(url):
         if not image['original'] == url:
             updated_arr.append(image)
     images = updated_arr
-    on_gallery_updated()
 
 
 def clear_gallery():
     global images
     images = []
-    on_gallery_updated()
 
 
 def get_gallery_sample():
@@ -57,9 +49,3 @@ def get_gallery_sample():
             'description': 'this is a sample image'
         }
     ]
-
-
-def on_gallery_updated():
-    gallery = get_current_gallery()
-    gallery_thread = threading.Thread(target=event_publisher.send, args=(gallery,))
-    gallery_thread.start()

@@ -38,8 +38,6 @@ const TerminalWrapper = ({child}) => {
 
     const LOG = new Logger("Terminal");
 
-    const [, dispatch] = useContext(Context);
-
     const [lines, setLines] = useState([]);
     const [history, setHistory] = useState([]);
     const [historyPtr, setHistoryPtr] = useState(0);
@@ -81,10 +79,6 @@ const TerminalWrapper = ({child}) => {
     });
 
     useEffect(() => {
-        dispatch({type: 'SET_CURRENT_PAGE', payload: 'terminal'});
-    }, [dispatch]);
-
-    useEffect(() => {
         if (historyPtr > history.length - 1) {
             setCurrentLine("");
         }
@@ -118,7 +112,6 @@ const TerminalWrapper = ({child}) => {
 
     function handleRequestSuccess(content, contentType, contentKey) {
         LOG.info("request success for content " + contentType + " : " + contentKey);
-        updateFetchState(contentKey);
         setLines(lines => [...lines, {
             key: lines.length, text: "request executed successfully", lineStyle: "info"
         }]);
@@ -230,12 +223,6 @@ const TerminalWrapper = ({child}) => {
     function updateHistory() {
         setHistory(oldHistory => [...oldHistory, currentLine]);
         setHistoryPtr(historyPtr => historyPtr + 1);
-    }
-
-    function updateFetchState(contentKey) {
-        dispatch({type: 'SET_CURRENT_CONTENT_KEY', payload: contentKey});
-        dispatch({type: 'ADD_FETCHED_CONTENT', payload: contentKey});
-        LOG.debug("fetched state updated");
     }
 
     return (

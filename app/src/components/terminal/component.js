@@ -1,10 +1,9 @@
-import React, {useContext, useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {useHistory} from "react-router-dom";
 import axios from 'axios'
 import TerminalLine from "../terminal-line/component";
 import {StyledTerminal} from "./style";
 import GlobalStyle from "../../global-style";
-import {Context} from "../../store";
 import Logger from "../../logger";
 
 const Terminal = () => {
@@ -14,8 +13,6 @@ const Terminal = () => {
     const ENTER_KEY = 13;
     const UP_KEY = 38;
     const DOWN_KEY = 40;
-
-    const [, dispatch] = useContext(Context);
 
     const [lines, setLines] = useState([]);
     const [history, setHistory] = useState([]);
@@ -57,10 +54,6 @@ const Terminal = () => {
     });
 
     useEffect(() => {
-        dispatch({type: 'SET_CURRENT_PAGE', payload: 'terminal'});
-    }, [dispatch]);
-
-    useEffect(() => {
         if (historyPtr > history.length - 1) {
             setCurrentLine("");
         }
@@ -71,7 +64,8 @@ const Terminal = () => {
 
     useEffect(() => {
         LOG.debug("history updated : currently " + history.length + " items");
-    }, [history, LOG]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [history]);
 
     const handleLineChange = (e) => {
         setCurrentLine(e.target.value);
@@ -97,16 +91,15 @@ const Terminal = () => {
             }
         })
             .then(res => {
-                handleRequestSuccess(res.data.content, res.headers['content-type'].split(";")[0], res.data['content-key']);
+                handleRequestSuccess(res.data, res.headers['content-type'].split(";")[0], res.data['key']);
             })
             .catch(err => {
                 handleRequestError(err)
             });
     }
 
-    function handleRequestSuccess(content, contentType, contentKey) {
+    function handleRequestSuccess(data, contentType, contentKey) {
         LOG.info("request success for content " + contentType + " : " + contentKey);
-        updateFetchState(contentKey);
         setLines(lines => [...lines, {
             key: lines.length, text: "request executed successfully", lineStyle: "info"
         }]);
@@ -114,16 +107,16 @@ const Terminal = () => {
             routeHistory.push({
                 pathname: '/json',
                 state: {
-                    json: content,
+                    content: data.content,
                 }
             })
         } else if (contentType === "text/csv") {
-            handleDisplayTable(content)
+            handleDisplayTable(data)
         } else if (contentType === "text/uri-list") {
-            handleNavigation(content)
+            handleNavigation(data)
         } else if (contentType === "text/plain") {
             setLines(lines => [...lines, {
-                key: lines.length, text: content, lineStyle: "info"
+                key: lines.length, text: data.content, lineStyle: "info"
             }]);
         }
     }
@@ -142,58 +135,34 @@ const Terminal = () => {
         updateHistory();
     }
 
-    function handleDisplayTable(content) {
+    function handleDisplayTable(data) {
         LOG.debug("executing request : displaying table");
         routeHistory.push({
             pathname: '/table',
             state: {
-                title: content.title,
-                columns: content.columns,
-                data: content.data
+                content: data.content
             }
         })
     }
 
-    function handleDisplayImages(args) {
-        LOG.debug("executing request : displaying images");
-        axios.get('/display/images', {
-            params: {
-                request: args
-            }
-        })
-            .then(res => {
-                let content = res.data.content;
-                routeHistory.push({
-                    pathname: '/gallery',
-                    state: content
-                })
-            })
-            .catch(err => {
-                setLines(lines => [...lines, {
-                    key: lines.length, text: err, lineStyle: "error"
-                }]);
-                setCurrentLine("");
-            });
-    }
-
-    function handleNavigation(content) {
+    function handleNavigation(data) {
         LOG.debug("executing request : navigation");
-        let type = content['type'];
-        let location = content['location'];
-        if (type === "external") {
+        let origin = data['origin'];
+        let location = data['location'];
+        if (origin === "external") {
             LOG.warn("External navigation not implemented")
             // todo
-        } else if (type === "internal") {
-            LOG.info("navigating to " + content['location'])
+        } else if (origin === "internal") {
+            LOG.info("navigating to " + data['location'])
             if (location[0] !== ["/"]) {
                 location = "/" + location;
             }
             routeHistory.push({
                 pathname: location,
-                state: content
+                state: data.content
             })
         } else {
-            LOG.error("Unknown navigation type: " + type)
+            LOG.error("Unknown navigation type: " + origin)
         }
     }
 
@@ -215,9 +184,6 @@ const Terminal = () => {
         } else if (currentLine === "display table") {
             handleDisplayTable(args);
             return;
-        } else if (currentLine === "display images") {
-            handleDisplayImages(args);
-            return;
         } else if (currentLine === "clear history") {
             let nbItems = lines.length;
             setHistory(() => []);
@@ -231,7 +197,6 @@ const Terminal = () => {
             setLines(() => [])
         } else {
             executeRequest(currentLine);
-            return;
         }
         if (currentLine.length > 0) {
             setHistory(oldHistory => [...oldHistory, currentLine]);
@@ -243,14 +208,6 @@ const Terminal = () => {
     function updateHistory() {
         setHistory(oldHistory => [...oldHistory, currentLine]);
         setHistoryPtr(historyPtr => historyPtr + 1);
-    }
-
-    function updateFetchState(contentKey) {
-        if (contentKey !== undefined) {
-            dispatch({type: 'SET_CURRENT_CONTENT_KEY', payload: contentKey});
-            dispatch({type: 'ADD_FETCHED_CONTENT', payload: contentKey});
-            LOG.debug("fetched state updated");
-        }
     }
 
     return (

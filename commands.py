@@ -49,4 +49,13 @@ gallery_control_remove_aliases = {
     'del img'
 }
 
+gallery_display_aliases = {
+    'display images',
+    'display gallery',
+    'show gallery',
+    'show images',
+    'display imgs',
+    'show imgs'
+}
+
 context_based = set.union(context_back_aliases, context_next_aliases)

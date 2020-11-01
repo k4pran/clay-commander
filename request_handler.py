@@ -6,13 +6,13 @@ import persistence_service
 import deductive_service
 import request_parser
 import state
-from response import prepare_response
+from response import prepare_content, prepare_response
 
 LOG = logging.getLogger(__name__)
 
 
 def handle_request(request, request_types: iter, name=None):
-    LOG.info("Received request {}: [{}]", request, request_types)
+    LOG.info("Received request %s: %s", request, request_types)
     if 'FETCH' in request_types and 'PERSIST' in request_types:
         return fetch_for_keeps(request, name)
     elif 'FETCH' in request_types:
@@ -31,6 +31,8 @@ def handle_request(request, request_types: iter, name=None):
         return handle_add_image(request)
     elif 'REMOVE_IMAGE' in request_types:
         return handle_remove_image(request)
+    elif 'DISPLAY_GALLERY' in request_types:
+        return handle_navigation('gallery', state.get_current_gallery())
     elif not request_types:
         error_message = "request not currently supported"
         LOG.error(error_message)
@@ -50,7 +52,7 @@ def fetch(request):
             results.append({
                 'content': content,
                 'content-type': content_type,
-                'content-key': content_key
+                'key': content_key
             })
         elif deductive_service.is_file(request_part):
             results.append(fetch_service.fetch_from_file(request_part))
@@ -66,20 +68,20 @@ def persist(request, content_type, name):
 
 def fetch_for_keeps(request, name=None):
     result = fetch(request)
-    return persist(result, content_type="", name="") # todo
+    return persist(result, content_type="", name="")  # todo
 
 
 def handle_listings(request):
     list_type = request_parser.parse_list_topic(request)
-    list_content = None
+    data = None
     if list_type == 'TABLES':
-        list_content = fetch_service.internal_fetch_table_list()
+        data = prepare_content(content=fetch_service.internal_fetch_table_list())
     elif list_type == 'IMAGES':
-        list_content = fetch_service.internal_fetch_image_list()
-    if list_content:
-        return prepare_response(list_content, 200, 'text/plain')
+        data = prepare_content(content=fetch_service.internal_fetch_image_list())
+    if data:
+        return prepare_response(data, 200, 'text/plain')
     else:
-        return prepare_response('Nothing to list', 204, 'text/plain')
+        return prepare_response(prepare_content(content='Nothing to list'), 204, 'text/plain')
 
 
 def update_state(new_state: str):
@@ -89,55 +91,35 @@ def update_state(new_state: str):
 
 def fetch_gallery():
     gallery = state.get_current_gallery()
-    return prepare_response(
-        {'content':
-            {
-                'state': gallery
-            },
-            'content-key': 18273847}  # todo
-        , 200, 'image/*')
+
+    content = prepare_content(content=gallery)
+    return prepare_response(content, 200, 'image/*')
 
 
 def handle_context():
     pass
 
 
-def handle_navigation(request):
-    request = request.split(' ')[-1]
+def handle_navigation(request, content=None):
+    location = request.split(' ')[-1]
     if deductive_service.is_url(request):
-        content_key = state.add_to_cache(request)
-        return prepare_response(
-            {
-                'content': {
-                    'location': request,
-                    'type': 'external',
-                },
-                'content-key': content_key
-            }
-            , 200, 'text/uri-list')
+        key = state.add_to_cache(request)
+        data = prepare_content(location=location, content=content, key=key)
+        return prepare_response(data, 200, 'text/uri-list')
     else:
-        content_key = state.add_to_cache(request)
-        return prepare_response(
-            {
-                'content': {
-                    'location': request,
-                    'type': 'internal',
-                },
-                'content-key': content_key
-
-            }
-            , 200, 'text/uri-list')
-
+        key = state.add_to_cache(request)
+        data = prepare_content(location=location, content=content, key=key, origin='internal')
+        return prepare_response(data, 200, 'text/uri-list')
 
 def handle_add_image(request):
     image_location = request.split(' ')[-1]
     if deductive_service.is_url(image_location):
         state.add_to_gallery(image_location)
-        success_response = {'content': "successfully added image {} to gallery".format(image_location)}
-        return prepare_response(success_response, 200, 'text/plain')
+        content = prepare_content(content="successfully added image {} to gallery".format(image_location))
+        return prepare_response(content, 200, 'text/plain')
     else:
-        error_response = {'content': "Invalid image url: " + image_location}
-        return prepare_response(error_response, 400, 'text/plain')
+        content = prepare_content(content="Invalid image url: " + image_location)
+        return prepare_response(content, 400, 'text/plain')
 
 
 def handle_remove_image(request):

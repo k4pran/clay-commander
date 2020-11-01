@@ -1,4 +1,4 @@
-import React, {forwardRef, useContext, useEffect, useState} from 'react'
+import React, {forwardRef, useState} from 'react'
 import {useLocation} from "react-router-dom";
 import MaterialTable from 'material-table'
 import {ThemeProvider as MuiThemeProvider} from '@material-ui/core/styles';
@@ -20,7 +20,6 @@ import Search from '@material-ui/icons/Search';
 import ViewColumn from '@material-ui/icons/ViewColumn';
 import createMuiTheme from "@material-ui/core/styles/createMuiTheme";
 import GlobalStyle from "../../global-style";
-import {Context} from "../../store";
 import {StyledComboLayout, StyledDataTable} from "./style";
 import Terminal from "../terminal/component";
 
@@ -44,19 +43,46 @@ const tableIcons = {
     ViewColumn: forwardRef((props, ref) => <ViewColumn {...props} ref={ref}/>)
 };
 
-export default function DataTable() {
+const safeSetTitleFromLocation = (location) => {
+    if (location.state === undefined || location.state.content === undefined || location.state.content.title === undefined) {
+        return "";
+    }
+    return location.state.content.title;
+}
+
+const safeSetColumnsFromLocation = (location) => {
+    if (location.state === undefined || location.state.content === undefined || location.state.content.columns === undefined) {
+        return [];
+    }
+    return location.state.content.columns;
+}
+
+const safeSetDataFromLocation = (location) => {
+    if (location.state === undefined || location.state.content === undefined || location.state.content.data === undefined) {
+        return [];
+    }
+    return location.state.content.data;
+}
+
+const safeSetTitleFromProps = (content) => {
+    return content.title === undefined ? "" : content.title;
+}
+
+const safeSetColumnsFromProps = (content) => {
+    return content.columns === undefined ? [] : content.columns;
+}
+
+const safeSetDataFromProps = (content) => {
+    return content.data === [] ? [] : content.data;
+}
+
+export default function DataTable({content}) {
 
     const location = useLocation();
-    const [, dispatch] = useContext(Context);
 
-    // const [title] = useState(location.state.title);
-    // const [columns] = useState(location.state.columns);
-    // const [data] = useState(location.state.data);
-    const [tableContent, setTableContent] = useState(location.content);
-
-    useEffect(() => {
-        dispatch({type: 'SET_CURRENT_PAGE', currentPage: 'table'});
-    }, [dispatch]);
+    const [title, setTitle] = useState(content === undefined ? safeSetTitleFromLocation(location) : safeSetTitleFromProps(content));
+    const [columns, setColumns] = useState(content === undefined ? safeSetColumnsFromLocation(location) : safeSetColumnsFromProps(content));
+    const [data, setData] = useState(content === undefined ? safeSetDataFromLocation(location) : safeSetDataFromProps(content));
 
     const theme = createMuiTheme({
         typography: {
@@ -84,9 +110,9 @@ export default function DataTable() {
                 <MuiThemeProvider theme={theme}>
                     <MaterialTable
                         icons={tableIcons}
-                        title={tableContent.title}
-                        columns={tableContent.columns}
-                        data={tableContent.data}
+                        title={title}
+                        columns={columns}
+                        data={data}
                         options={{
                             headerStyle: {
                                 backgroundColor: '#01579b',

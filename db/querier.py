@@ -25,11 +25,14 @@ def fetch_table(name: str):
 
 
 def fetch_images(name: str):
+    images = fetch_image_names()
+    if not images:
+        return []
     name, score = process.extractOne(name, fetch_image_names())
     if score > match_threshold:
         return [table_images.find_one({'name': name})['data']]
     else:
-        return None
+        return []
 
 
 def fetch_table_names():
