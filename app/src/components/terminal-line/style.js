@@ -21,3 +21,7 @@ export const StyledInput = styled.input`
     border: 0;
     outline: none;
 `;
+
+export const StyledTexMirror = styled.pre`
+    ${TerminalShared}
+`;

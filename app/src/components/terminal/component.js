@@ -10,6 +10,8 @@ const Terminal = ({child}) => {
 
     const LOG = new Logger("Terminal");
 
+    const [mathJax, setMathJax] = useState();
+
     const ENTER_KEY = 13;
     const UP_KEY = 38;
     const DOWN_KEY = 40;
@@ -19,6 +21,7 @@ const Terminal = ({child}) => {
     const [historyPtr, setHistoryPtr] = useState(0);
     const [currentLine, setCurrentLine] = useState("");
     const [content, setContent] = useState({})
+    const [mathMode, setMathMode] = useState(false)
 
     let routeHistory = useHistory();
 
@@ -70,7 +73,54 @@ const Terminal = ({child}) => {
 
     const handleLineChange = (e) => {
         setCurrentLine(e.target.value);
+        if (/\$.*\$/.test(currentLine)) {
+            setMathMode(() => true);
+        } else {
+            setMathMode(() => false);
+        }
     };
+
+    useEffect(() => {
+            window.MathJax = {
+                options: {
+                    skipHtmlTags: [
+                        'script', 'noscript', 'style', 'textarea',
+                        'code', 'annotation', 'annotation-xml'
+                    ]
+                },
+                tex: {
+                    inlineMath: [['$', '$'], ['\\(', '\\)']]
+                },
+                svg: {
+                    fontCache: 'global'
+                }
+            };
+
+            const script = document.createElement('script');
+
+            script.type = "text/javascript";
+            script.id = "MathJax-script";
+            script.src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js";
+            script.async = true;
+
+            document.head.appendChild(script);
+
+            script.onload = function () {
+                setMathJax(() => window.MathJax);
+            };
+
+            return () => {
+                document.head.removeChild(script);
+            }
+        },
+        []
+    );
+
+    useEffect(() => {
+        if (mathJax && mathMode) {
+            mathJax.typeset();
+        }
+    }, [currentLine, mathJax]);
 
     function handleHome() {
         routeHistory.push({
@@ -173,9 +223,10 @@ const Terminal = ({child}) => {
         let args = cmdParts.slice(1).join();
 
         setLines(lines => [...lines, {
-            key: lines.length, text: currentLine, lineStyle: "normal"
+            key: lines.length, text: currentLine, lineStyle: "normal", mathMode: mathMode
         }]);
         setCurrentLine("");
+        setMathMode(false);
         if (currentLine === "go home") {
             handleHome();
             return;
@@ -224,6 +275,7 @@ const Terminal = ({child}) => {
                         handleLineChange={handleLineChange}
                         value={line.text}
                         lineStyle={line.lineStyle}
+                        mathMode={line.mathMode}
                     />
                 ))}
                 <TerminalLine
@@ -233,6 +285,7 @@ const Terminal = ({child}) => {
                     handleLineChange={handleLineChange}
                     value={currentLine}
                     lineStyle={"normal"}
+                    mathMode={mathMode}
                 />
             </StyledTerminal>
         </div>
