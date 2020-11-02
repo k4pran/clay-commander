@@ -6,7 +6,7 @@ const defaultFontSize = 18;
 
 const TexViewer = ({className, tex}) => {
 
-    const [mathJax, setMathJaxx] = useState();
+    const [mathJax, setMathJax] = useState();
     const [fontSize, setFontSize] = useState(defaultFontSize);
 
     useEffect(() => {
@@ -35,7 +35,7 @@ const TexViewer = ({className, tex}) => {
         document.head.appendChild(script);
 
         script.onload = function () {
-            setMathJaxx(() => window.MathJax);
+            setMathJax(() => window.MathJax);
         };
 
         return () => {
