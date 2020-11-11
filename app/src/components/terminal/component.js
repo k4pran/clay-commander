@@ -67,16 +67,20 @@ const Terminal = ({child}) => {
     }, [historyPtr, history]);
 
     useEffect(() => {
+        setHistoryPtr(history.length);
+    }, [lines]);
+
+    useEffect(() => {
         LOG.debug("history updated : currently " + history.length + " items");
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [history]);
 
     const handleLineChange = (e) => {
         setCurrentLine(e.target.value);
-        if (/\$.*\$/.test(currentLine)) {
-            setMathMode(() => true);
+        if (/\$.*\$/.test(e.target.value)) {
+            setMathMode(true);
         } else {
-            setMathMode(() => false);
+            setMathMode(false);
         }
     };
 
@@ -86,7 +90,12 @@ const Terminal = ({child}) => {
                     skipHtmlTags: [
                         'script', 'noscript', 'style', 'textarea',
                         'code', 'annotation', 'annotation-xml'
-                    ]
+                    ],
+                    menuOptions: {
+                        settings: {
+                            texHints: false
+                        }
+                    }
                 },
                 tex: {
                     inlineMath: [['$', '$'], ['\\(', '\\)']]
@@ -183,7 +192,6 @@ const Terminal = ({child}) => {
         setLines(lines => [...lines, {
             key: lines.length, text: errMessage, lineStyle: "error"
         }]);
-        updateHistory();
     }
 
     function handleDisplayTable(data) {
@@ -225,7 +233,6 @@ const Terminal = ({child}) => {
         setLines(lines => [...lines, {
             key: lines.length, text: currentLine, lineStyle: "normal", mathMode: mathMode
         }]);
-        setCurrentLine("");
         setMathMode(false);
         if (currentLine === "go home") {
             handleHome();
@@ -251,10 +258,9 @@ const Terminal = ({child}) => {
             executeRequest(currentLine);
         }
         if (currentLine.length > 0) {
-            setHistory(oldHistory => [...oldHistory, currentLine]);
-            setHistoryPtr(historyPtr => historyPtr + 1);
             updateHistory();
         }
+        setCurrentLine("")
     }
 
     function updateHistory() {
