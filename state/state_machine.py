@@ -6,8 +6,11 @@ def update_state(new_state: dict):
     global current_page, last_fetched
 
     old_state = capture_state()
-    current_page = new_state['currentPage']
-    last_fetched = new_state['currentContentKey']
+    if 'currentPage' in new_state:
+        current_page = new_state['currentPage']
+
+    if 'currentContentKey' in new_state:
+        last_fetched = new_state['currentContentKey']
     new_state = capture_state()
 
     state_update_response = capture_state_transition(old_state, new_state)

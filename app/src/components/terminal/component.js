@@ -1,26 +1,27 @@
-import React, {useContext, useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {useHistory} from "react-router-dom";
 import axios from 'axios'
 import TerminalLine from "../terminal-line/component";
 import {StyledTerminal} from "./style";
 import GlobalStyle from "../../global-style";
-import {Context} from "../../store";
 import Logger from "../../logger";
 
-const Terminal = () => {
+const Terminal = ({child}) => {
 
     const LOG = new Logger("Terminal");
+
+    const [mathJax, setMathJax] = useState();
 
     const ENTER_KEY = 13;
     const UP_KEY = 38;
     const DOWN_KEY = 40;
 
-    const [, dispatch] = useContext(Context);
-
     const [lines, setLines] = useState([]);
     const [history, setHistory] = useState([]);
     const [historyPtr, setHistoryPtr] = useState(0);
     const [currentLine, setCurrentLine] = useState("");
+    const [content, setContent] = useState({})
+    const [mathMode, setMathMode] = useState(false)
 
     let routeHistory = useHistory();
 
@@ -57,10 +58,6 @@ const Terminal = () => {
     });
 
     useEffect(() => {
-        dispatch({type: 'SET_CURRENT_PAGE', payload: 'terminal'});
-    }, [dispatch]);
-
-    useEffect(() => {
         if (historyPtr > history.length - 1) {
             setCurrentLine("");
         }
@@ -70,12 +67,69 @@ const Terminal = () => {
     }, [historyPtr, history]);
 
     useEffect(() => {
+        setHistoryPtr(history.length);
+    }, [lines]);
+
+    useEffect(() => {
         LOG.debug("history updated : currently " + history.length + " items");
-    }, [history, LOG]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [history]);
 
     const handleLineChange = (e) => {
         setCurrentLine(e.target.value);
+        if (/\$.*\$/.test(e.target.value)) {
+            setMathMode(true);
+        } else {
+            setMathMode(false);
+        }
     };
+
+    useEffect(() => {
+            window.MathJax = {
+                options: {
+                    skipHtmlTags: [
+                        'script', 'noscript', 'style', 'textarea',
+                        'code', 'annotation', 'annotation-xml'
+                    ],
+                    menuOptions: {
+                        settings: {
+                            texHints: false
+                        }
+                    }
+                },
+                tex: {
+                    inlineMath: [['$', '$'], ['\\(', '\\)']]
+                },
+                svg: {
+                    fontCache: 'global'
+                }
+            };
+
+            const script = document.createElement('script');
+
+            script.type = "text/javascript";
+            script.id = "MathJax-script";
+            script.src = "https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js";
+            script.async = true;
+
+            document.head.appendChild(script);
+
+            script.onload = function () {
+                setMathJax(() => window.MathJax);
+            };
+
+            return () => {
+                document.head.removeChild(script);
+            }
+        },
+        []
+    );
+
+    useEffect(() => {
+        if (mathJax && mathMode) {
+            mathJax.typeset();
+        }
+    }, [currentLine, mathJax]);
 
     function handleHome() {
         routeHistory.push({
@@ -97,16 +151,15 @@ const Terminal = () => {
             }
         })
             .then(res => {
-                handleRequestSuccess(res.data.content, res.headers['content-type'].split(";")[0], res.data['content-key']);
+                handleRequestSuccess(res.data, res.headers['content-type'].split(";")[0], res.data['key']);
             })
             .catch(err => {
                 handleRequestError(err)
             });
     }
 
-    function handleRequestSuccess(content, contentType, contentKey) {
+    function handleRequestSuccess(data, contentType, contentKey) {
         LOG.info("request success for content " + contentType + " : " + contentKey);
-        updateFetchState(contentKey);
         setLines(lines => [...lines, {
             key: lines.length, text: "request executed successfully", lineStyle: "info"
         }]);
@@ -114,13 +167,17 @@ const Terminal = () => {
             routeHistory.push({
                 pathname: '/json',
                 state: {
-                    json: content,
+                    content: data.content,
                 }
             })
         } else if (contentType === "text/csv") {
-            handleDisplayTable(content)
+            handleDisplayTable(data)
         } else if (contentType === "text/uri-list") {
-            handleNavigation(content)
+            handleNavigation(data)
+        } else if (contentType === "text/plain") {
+            setLines(lines => [...lines, {
+                key: lines.length, text: data.content, lineStyle: "info"
+            }]);
         }
     }
 
@@ -135,7 +192,6 @@ const Terminal = () => {
         setLines(lines => [...lines, {
             key: lines.length, text: errMessage, lineStyle: "error"
         }]);
-        updateHistory();
     }
 
     function handleDisplayTable(data) {
@@ -143,57 +199,29 @@ const Terminal = () => {
         routeHistory.push({
             pathname: '/table',
             state: {
-                title: data.title,
-                columns: data.columns,
-                data: data.data
+                content: data.content
             }
         })
     }
 
-    function handleDisplayImages(args) {
-        LOG.debug("executing request : displaying images");
-        axios.get('/display/images', {
-            params: {
-                request: args
-            }
-        })
-            .then(res => {
-                let data = res.data;
-                routeHistory.push({
-                    pathname: '/gallery',
-                    state: {
-                        imageData: data
-                    }
-                })
-            })
-            .catch(err => {
-                setLines(lines => [...lines, {
-                    key: lines.length, text: err, lineStyle: "error"
-                }]);
-                setCurrentLine("");
-            });
-    }
-
-    function handleNavigation(content) {
+    function handleNavigation(data) {
         LOG.debug("executing request : navigation");
-        let type = content['type'];
-        let location = content['location'];
-        if (type === "external") {
+        let origin = data['origin'];
+        let location = data['location'];
+        if (origin === "external") {
             LOG.warn("External navigation not implemented")
             // todo
-        } else if (type === "internal") {
-            LOG.info("navigating to " + content['location'])
+        } else if (origin === "internal") {
+            LOG.info("navigating to " + data['location'])
             if (location[0] !== ["/"]) {
                 location = "/" + location;
             }
             routeHistory.push({
                 pathname: location,
-                state: {
-                    imageData: content
-                }
+                state: data.content
             })
         } else {
-            LOG.error("Unknown navigation type: " + type)
+            LOG.error("Unknown navigation type: " + origin)
         }
     }
 
@@ -203,9 +231,9 @@ const Terminal = () => {
         let args = cmdParts.slice(1).join();
 
         setLines(lines => [...lines, {
-            key: lines.length, text: currentLine, lineStyle: "normal"
+            key: lines.length, text: currentLine, lineStyle: "normal", mathMode: mathMode
         }]);
-        setCurrentLine("");
+        setMathMode(false);
         if (currentLine === "go home") {
             handleHome();
             return;
@@ -214,9 +242,6 @@ const Terminal = () => {
             return;
         } else if (currentLine === "display table") {
             handleDisplayTable(args);
-            return;
-        } else if (currentLine === "display images") {
-            handleDisplayImages(args);
             return;
         } else if (currentLine === "clear history") {
             let nbItems = lines.length;
@@ -231,13 +256,11 @@ const Terminal = () => {
             setLines(() => [])
         } else {
             executeRequest(currentLine);
-            return;
         }
         if (currentLine.length > 0) {
-            setHistory(oldHistory => [...oldHistory, currentLine]);
-            setHistoryPtr(historyPtr => historyPtr + 1);
             updateHistory();
         }
+        setCurrentLine("")
     }
 
     function updateHistory() {
@@ -245,34 +268,33 @@ const Terminal = () => {
         setHistoryPtr(historyPtr => historyPtr + 1);
     }
 
-    function updateFetchState(contentKey) {
-        dispatch({type: 'SET_CURRENT_CONTENT_KEY', payload: contentKey});
-        dispatch({type: 'ADD_FETCHED_CONTENT', payload: contentKey});
-        LOG.debug("fetched state updated");
-    }
-
     return (
-        <StyledTerminal>
-            <GlobalStyle terminal={true}/>
-            {lines.map(line => (
+       <div>
+            {child === undefined ? <div style={{display: 'none'}}/> : child({content})}
+            <StyledTerminal>
+                <GlobalStyle terminal={true}/>
+                {lines.map(line => (
+                    <TerminalLine
+                        key={line.key}
+                        initReadOnly={true}
+                        focus={false}
+                        handleLineChange={handleLineChange}
+                        value={line.text}
+                        lineStyle={line.lineStyle}
+                        mathMode={line.mathMode}
+                    />
+                ))}
                 <TerminalLine
-                    key={line.key}
-                    initReadOnly={true}
-                    focus={false}
+                    key={"current line"}
+                    initReadOnly={false}
+                    focus={true}
                     handleLineChange={handleLineChange}
-                    value={line.text}
-                    lineStyle={line.lineStyle}
+                    value={currentLine}
+                    lineStyle={"normal"}
+                    mathMode={mathMode}
                 />
-            ))}
-            <TerminalLine
-                key={"current line"}
-                initReadOnly={false}
-                focus={true}
-                handleLineChange={handleLineChange}
-                value={currentLine}
-                lineStyle={"normal"}
-            />
-        </StyledTerminal>
+            </StyledTerminal>
+        </div>
     )
 };
 

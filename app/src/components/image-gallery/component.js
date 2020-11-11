@@ -1,60 +1,37 @@
-import React, {useContext, useEffect, useState} from "react";
+import React, {useEffect, useState} from "react";
 import {useLocation} from "react-router-dom";
 import ImageGallery from "react-image-gallery";
 import "react-image-gallery/styles/css/image-gallery.css";
-import {Context} from "../../store";
-import axios from "axios";
+import Logger from "../../logger";
 
-const images = [
+const LOG = new Logger("Gallery");
+
+const example_gallery = [
     {
         original: 'https://picsum.photos/id/1018/1000/600/',
         thumbnail: 'https://picsum.photos/id/1018/250/150/',
     }
 ];
 
-const safeInitialize = (state) => {
-    if (state === undefined) {
-        return getGallery();
+const safeInitializeFromProps = (content) => {
+    LOG.info("Initializing gallery")
+    return content === undefined ? example_gallery : content;
+}
+
+const safeInitializeFromLocation = (location) => {
+    LOG.info("Initializing gallery")
+    if (location.state === undefined || location.state.content === undefined) {
+        return example_gallery;
     }
-    return state.imageData === undefined ? getGallery() : state.imageData;
+    return location.state.content;
 }
 
-
-const getGallery = () => {
-    axios.get('/state/gallery')
-        .then(res => {
-            console.log(res);
-            return images;
-        })
-        .catch(err => {
-            console.log(err);
-            // todo
-            return images;
-        });
-}
-
-
-const ImageViewer = () => {
+const ImageViewer = (content) => {
 
     const location = useLocation();
-    const [, dispatch] = useContext(Context);
-
-    const [images, setImages] = useState([]);
-
-    useEffect(() => {
-        axios.get('/state/gallery')
-            .then(res => {
-                console.log("init images"); // todo logger
-                setImages(res.data.content.state);
-            })
-            .catch(err => {
-                console.log(err);
-            });
-    }, []);
-
-    useEffect(() => {
-        dispatch({type: 'SET_CURRENT_PAGE', currentPage: 'gallery'});
-    }, [dispatch]);
+    const [images, setImages] = useState(
+        content === undefined ? safeInitializeFromProps(content)
+            : safeInitializeFromLocation(location));
 
     return (
         <ImageGallery items={images}/>

@@ -29,6 +29,8 @@ def parse_request_str(request):
         request_types.append('ADD_IMAGE')
     if any([alias in request for alias in gallery_control_add_aliases]):
         request_types.append('REMOVE_IMAGE')
+    if any([alias in request for alias in gallery_display_aliases]):
+        request_types.append('DISPLAY_GALLERY')
     return request_types
 
 
